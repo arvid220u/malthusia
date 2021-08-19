@@ -81,6 +81,7 @@ class Instrument:
                 continue
 
             # TODO: shouldn't target here depend on whether it is an absolute or relative jumper?
+            # yep, this should definitely not work for relative jumps
             # for both of them, however, we need to do some fancy keeping track of to keep track of them
             target = [t for t in instructions if instruction.argval == t.offset][0]
             instruction.jump_to = target
