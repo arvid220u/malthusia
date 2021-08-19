@@ -35,13 +35,13 @@ class Instruction(SimpleNamespace):
         return self.opcode == dis.opmap["EXTENDED_ARG"]
 
     @classmethod
-    def ExtendedArgs(self, arg):
+    def ExtendedArgs(self):
         return Instruction(dis.Instruction(
             opcode=dis.opmap["EXTENDED_ARG"],
             opname='EXTENDED_ARG',
-            arg=arg,
-            argval=arg,
-            argrepr=arg,
+            arg=1,
+            argval=1,
+            argrepr="",
             offset=None,
             starts_line=None,
             is_jump_target=False

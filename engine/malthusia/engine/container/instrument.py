@@ -34,8 +34,6 @@ class Instrument:
         :return: a new code object that has been injected with our bytecode counter
         """
 
-        logger.debug(dis.Bytecode(bytecode).dis())
-
         # Ensure all code constants (e.g. list comprehensions) are also instrumented.
         new_consts = []
         for i, constant in enumerate(bytecode.co_consts):
@@ -44,6 +42,8 @@ class Instrument:
             else:
                 new_consts.append(constant)
         new_consts = tuple(new_consts)
+
+        logger.debug(dis.Bytecode(bytecode).dis())
 
         instructions = list(dis.get_instructions(bytecode))
 
@@ -54,22 +54,23 @@ class Instrument:
         # the injection, which consists of a function call to an __instrument__ method which increments bytecode
         # these three instructions will be inserted between every line of instrumented code
         injection = [
-            dis.Instruction(opcode=116, opname='LOAD_GLOBAL', arg=function_name_index%256, argval='__instrument__', argrepr='__instrument__', offset=None, starts_line=None, is_jump_target=False),
+            dis.Instruction(opcode=116, opname='LOAD_GLOBAL', arg=function_name_index, argval='__instrument__', argrepr='__instrument__', offset=None, starts_line=None, is_jump_target=False),
             dis.Instruction(opcode=131, opname='CALL_FUNCTION', arg=0, argval=0, argrepr=0, offset=None, starts_line=None, is_jump_target=False),
             dis.Instruction(opcode=1, opname='POP_TOP', arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=False)
         ]
         injection = [Instruction(inst, original=False) for inst in injection]
         # extends the opargs so that it can store the index of __instrument__
         inserted_extended_args = 0
-        while function_name_index > 255: #(255 = 2^8 -1 = 1 oparg)
+        function_name_index >>= 8
+        while function_name_index > 0: #(255 = 2^8 -1 = 1 oparg)
             if inserted_extended_args >= 3:
                 # we can only insert 3! so abort!
                 raise SyntaxError("Too many extended_args wanting to be inserted; possibly too many co_names (more than 2^32).")
-            function_name_index >>= 8
             injection = [
-                Instruction.ExtendedArgs(function_name_index%256)
+                Instruction.ExtendedArgs()
             ] + injection
             inserted_extended_args += 1
+            function_name_index >>= 8
 
         # convert every instruction into our own instruction format, which adds a couple of fields.
         for i, instruction in enumerate(instructions):
@@ -80,8 +81,6 @@ class Instrument:
             if instruction.is_jumper():
                 instruction.calculate_orig_jump_target_offset()
                 logger.debug(f"instr {instruction.offset} orig jump target offset: {instruction.orig_jump_target_offset}")
-
-        #unsafe = {110, 113, 114, 115, 116, 120, 124, 125, 131}  # bytecode ops that break the instrument
 
         # We then inject the injection before every call, except for those following an EXTENDED_ARGS.
         new_instructions = []
@@ -137,21 +136,16 @@ class Instrument:
                     cur_extended_args = []
                     continue
 
-
-
                 real_arg = instruction.calculate_jump_arg(orig_to_curr_offset)
-                instruction.arg = real_arg % 256
-                real_arg >>= 8
+                instruction.arg = real_arg
 
+                real_arg >>= 8
                 cur_extended_args_i = len(cur_extended_args) - 1
                 while real_arg > 0:
                     if cur_extended_args_i > -1:
-                        # modify the existing extended args
-                        cur_extended_args[cur_extended_args_i].arg = real_arg % 256
                         cur_extended_args_i -= 1
                     else:
-                        # insert a new extended args
-                        cur_extended_args = [Instruction.ExtendedArgs(real_arg % 256)] + cur_extended_args
+                        cur_extended_args = [Instruction.ExtendedArgs()] + cur_extended_args
                         # this causes us to have to redo everything again
                         fixed = False
                     real_arg >>= 8
@@ -182,6 +176,8 @@ class Instrument:
                 else:
                     break
             orig_to_curr_offset[instruction.orig_offset] = cur_offset
+
+        logger.debug(f"near-final instructions: {instructions}")
 
         # translate line numbers into curr offset
         # this algorithm deduced from https://github.com/python/cpython/blob/3.9/Objects/lnotab_notes.txt#L56
@@ -216,6 +212,42 @@ class Instrument:
         else:
             assert(len(bytecode.co_lnotab) == 0)
         new_lnotab = bytes(new_lnotab)
+
+
+        # convert args into 256-space
+        new_instructions = []
+        cur_extended_args = []
+        for instruction in instructions:
+            if instruction.is_extended_arg():
+                cur_extended_args.append(instruction)
+                continue
+            if instruction.arg is None:
+                assert(len(cur_extended_args) == 0)
+                new_instructions.append(instruction)
+                continue
+
+            real_arg = instruction.arg
+            logger.debug(f"real arg: {real_arg}")
+            logger.debug(f"cur extended args: {cur_extended_args}")
+            instruction.arg = real_arg % 256
+            real_arg >>= 8
+
+            cur_extended_args_i = len(cur_extended_args) - 1
+            while real_arg > 0:
+                assert(cur_extended_args_i > -1)
+                # modify the existing extended args
+                cur_extended_args[cur_extended_args_i].arg = real_arg % 256
+                cur_extended_args_i -= 1
+                real_arg >>= 8
+            assert(cur_extended_args_i == -1) # we may never decrease the offsets, or something went very wrong (we only add instructions, which should monotonically increase offsets)
+            assert(len(cur_extended_args) <= 3) # max 3 extended args
+
+            new_instructions.extend(cur_extended_args)
+            new_instructions.append(instruction)
+            cur_extended_args = []
+
+        assert(len(cur_extended_args)==0)
+        instructions = new_instructions
 
         # Finally, we repackage up our instructions into a byte string and use it to build a new code object
         assert(all([inst.arg is None or (0 <= inst.arg and inst.arg < 256) for inst in instructions]))
