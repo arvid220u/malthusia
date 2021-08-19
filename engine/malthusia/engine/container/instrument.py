@@ -47,6 +47,8 @@ class Instrument:
 
         instructions = list(dis.get_instructions(bytecode))
 
+        orig_linestarts = list(dis.findlinestarts(bytecode))
+
         function_name_index = len(bytecode.co_names)  # we will be inserting our __instrument__ call at the end of co_names
 
         # the injection, which consists of a function call to an __instrument__ method which increments bytecode
@@ -167,58 +169,53 @@ class Instrument:
         for i, instruction in enumerate(instructions):
             instruction.offset = 2*i
 
-        #Maintaining correct line info ( traceback bug fix)
-        #co_lnotab stores line information in Byte form
-        # It stores alterantively, the number of instructions to the next increase in line number and
-        # the increase in line number then
-        #We need to ensure that these are bytes (You might want to break an increase into two see the article or code below)
-        #The code did not update these bytes, we need to update the number of instructions before the beginning of each line
-        #It should be similar to the way the jump to statement were fixed, I tried to mimick them but failed, I feel like I do not inderstand instruction.py
-        # I am overestimating the number of instructions before the start of the line in this fix
-        # you might find the end of this article helpful: https://towardsdatascience.com/understanding-python-bytecode-e7edaae8734d
-        # old_lnotab = {} #stores the old right info in a more usefull way (maps instruction num to line num)
-        # i = 0
-        # line_num = 0 #maintains line number by adding differences
-        # instruction_num = 0 #maintains the instruction num by addind differences
-        # while 2*i < len(bytecode.co_lnotab):
-        #     instruction_num += bytecode.co_lnotab[2 * i]
-        #     line_num += bytecode.co_lnotab[2 * i + 1]
-        #     old_lnotab[instruction_num] = line_num
-        #     i += 1
-        # #Construct a map from old instruction numbers, to new ones.
-        # num_injected = 0
-        # instruction_index = 0
-        # old_to_new_instruction_num = {}
-        # for instruction in instructions:
-        #     if instruction.was_there:
-        #         old_to_new_instruction_num[2 * (instruction_index - num_injected)] = 2 * instruction_index
-        #     instruction_index += 1
-        #     if not instruction.was_there:
-        #         num_injected += 1
-        # new_lnotab = {}
-        # for key in old_lnotab:
-        #     new_lnotab[old_to_new_instruction_num[key]] = old_lnotab[key]
-        #
-        # #Creating a differences list of integers, while ensuring integers in it are bytes
-        # pairs = sorted(new_lnotab.items())
-        # new_lnotab = []
-        # previous_pair = (0, 0)
-        # for pair in pairs:
-        #     num_instructions = pair[0] - previous_pair[0]
-        #     num_lines = pair[1] - previous_pair[1]
-        #     while num_instructions > 127:
-        #         new_lnotab.append(127)
-        #         new_lnotab.append(0)
-        #         num_instructions -= 127
-        #     new_lnotab.append(num_instructions)
-        #     while num_lines > 127:
-        #         new_lnotab.append(127)
-        #         new_lnotab.append(0)
-        #         num_lines -= 127
-        #     new_lnotab.append(num_lines)
-        #     previous_pair = pair
-        # #tranfer to bytes and we are good :)
-        # new_lnotab = bytes(new_lnotab)
+        # calculate map from orig_offset to cur_offset
+        orig_to_curr_offset = {}
+        for i, instruction in enumerate(instructions):
+            if not instruction.original:
+                continue
+            cur_offset = instruction.offset
+            for prev_instr in instructions[max(i-3,0):i][::-1]:
+                if prev_instr.is_extended_arg():
+                    cur_offset -= 2
+                    assert(cur_offset == prev_instr.offset)
+                else:
+                    break
+            orig_to_curr_offset[instruction.orig_offset] = cur_offset
+
+        # translate line numbers into curr offset
+        # this algorithm deduced from https://github.com/python/cpython/blob/3.9/Objects/lnotab_notes.txt#L56
+        curr_linestarts = [(orig_to_curr_offset[offset], lineno) for offset, lineno in orig_linestarts]
+        new_lnotab = []
+        if len(curr_linestarts) > 0:
+            logger.debug(f"orig linestarts: {orig_linestarts}")
+            logger.debug(f"lnotab: {[int(x) for x in bytecode.co_lnotab]}")
+            logger.debug(f"first line: {bytecode.co_firstlineno}")
+            if curr_linestarts[0][1] != bytecode.co_firstlineno:
+                curr_linestarts = [(0,bytecode.co_firstlineno)] + curr_linestarts
+            for cur, last in zip(curr_linestarts[1:],curr_linestarts[:-1]):
+                bytesdiff = cur[0] - last[0]
+                linediff = cur[1] - last[1]
+                while bytesdiff > 255:
+                    new_lnotab += [255, 0]
+                    bytesdiff -= 255
+                if linediff >= 0:
+                    while linediff > 127:
+                        new_lnotab += [bytesdiff, 127]
+                        linediff -= 127
+                        bytesdiff = 0
+                    if linediff > 0 or bytesdiff > 0:
+                        new_lnotab += [bytesdiff, linediff]
+                else:
+                    while linediff < -128:
+                        new_lnotab += [bytesdiff, -128]
+                        linediff -= -128
+                        bytesdiff = 0
+                    if linediff < 0 or bytesdiff > 0:
+                        new_lnotab += [bytesdiff, linediff]
+        else:
+            assert(len(bytecode.co_lnotab) == 0)
+        new_lnotab = bytes(new_lnotab)
 
         # Finally, we repackage up our instructions into a byte string and use it to build a new code object
         assert(all([inst.arg is None or (0 <= inst.arg and inst.arg < 256) for inst in instructions]))
@@ -229,7 +226,7 @@ class Instrument:
         new_names = tuple(bytecode.co_names) + ('__instrument__', )
 
         # return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
-        return Instrument.build_code(bytecode, new_code, new_names, new_consts, bytecode.co_lnotab)
+        return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
 
     @staticmethod
     def build_code(old_code, new_code, new_names, new_consts, new_lnotab):
