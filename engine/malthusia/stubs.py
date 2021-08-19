@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union
 
-from battlehack20.engine.game.game import Team, RobotType
+from .engine.game.game import Team, RobotType
 
 # The stubs in this file make it possible for editors to auto-complete the global methods
 # They can be imported using "from battlehack20.stubs import *"

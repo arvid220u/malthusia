@@ -4,32 +4,25 @@ This repository contains all the code for the Battlecode Python engine.
 
 ## Installation and Usage
 
-### Installation
-To install the engine as a local package, run
-```
-$ pip install --user -e .
+1. Install `poetry`.
+2. Install Python 3.7.
+3. `poetry env use python3.7`
+4. `poetry shell`
+5. `poetry install`
+
+Test it out by running:
+
+```bash
+python run.py examplefuncsplayer examplefuncsplayer
 ```
 
-(Note for mac people: you may need to replace `pip` with `pip3`.) 
-
-The `-e` flag allows you to change the source code and have the changes be automatically reflected without needing to reinstall.
-
-Test it out by trying:
-
-```
-$ python3 run.py examplefuncsplayer examplefuncsplayer
-```
+(this needs to be after running `poetry shell`)
 
 You should see a game between `examplefuncsplayer` and `examplefuncsplayer` being played.
 If your code is in a directory `~/yourcode/coolplayer` then you can run it against examplefuncsplayer using
 
 ```
-$ python3 run.py examplefuncsplayer ~/yourcode/coolplayer
-```
-
-If you would like to uninstall, simply run
-```
-$ pip uninstall battlehack20
+python run.py examplefuncsplayer ~/yourcode/coolplayer
 ```
 
 ### Running Interactively
@@ -37,7 +30,7 @@ $ pip uninstall battlehack20
 Run
 
 ```
-$ python3 -i run.py examplefuncsplayer examplefuncsplayer
+python -i run.py examplefuncsplayer examplefuncsplayer
 ```
 
 This will open an interactive Python shell. There, you can run
@@ -51,13 +44,13 @@ which advances the game 1 turn. This is very useful for debugging.
 
 ### Advanced Usage
 
-Interacting directly with the `battlehack20` API will give you more freedom and might make it easier to debug your code. The following is a minimal example of how to do that.
+Interacting directly with the `malthusia` API will give you more freedom and might make it easier to debug your code. The following is a minimal example of how to do that.
 
 ```
-$ python3
->>> import battlehack20 as bh20
->>> code = bh20.CodeContainer.from_directory('./examplefuncsplayer')
->>> game = bh20.Game([code, code], debug=True)
+python
+>>> import malthusia as m
+>>> code = m.CodeContainer.from_directory('./examplefuncsplayer')
+>>> game = m.Game([code, code], debug=True)
 >>> game.turn()
 ```
 

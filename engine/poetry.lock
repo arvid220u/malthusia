@@ -1,0 +1,24 @@
+[[package]]
+name = "restrictedpython"
+version = "4.0b4"
+description = "RestrictedPython is a defined subset of the Python language which allows to provide a program input into a trusted environment."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+develop = ["isort", "pdbpp"]
+docs = ["sphinx"]
+release = ["zest.releaser"]
+test = ["pytest", "pytest-mock"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = ">=3, <3.8"
+content-hash = "2c16ea98d469939f815602d1eabaa62bf6725eaca28e497f09aa2db3550c6562"
+
+[metadata.files]
+restrictedpython = [
+    {file = "RestrictedPython-4.0b4-py2.py3-none-any.whl", hash = "sha256:ccba5c97382528e2b3ac48137146d332963dee99a63280a392bb13f8ff45ff92"},
+    {file = "RestrictedPython-4.0b4.tar.gz", hash = "sha256:051fcc623788c15358ca158a0fd7cbbe530f5cd2dcb70680db1322b90e1b9465"},
+]

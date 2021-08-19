@@ -74,7 +74,7 @@ class CodeContainer:
         Go to https://regex101.com/r/bhAqFE/6 to test the regular expression with custom input.
         """
 
-        pattern = r'^([ \t]*)from([ \t]+)battlehack20\.stubs([ \t]+)import([ \t]+)(\*|([a-zA-Z_]+([ \t]*),([ \t]*))*[a-zA-Z_]+)([ \t]*)$'
+        pattern = r'^([ \t]*)from([ \t]+)malthusia\.stubs([ \t]+)import([ \t]+)(\*|([a-zA-Z_]+([ \t]*),([ \t]*))*[a-zA-Z_]+)([ \t]*)$'
 
         # Replace all stub imports
         while True:
