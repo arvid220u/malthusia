@@ -76,3 +76,9 @@ You should see the output:
 ```
 
 If you're curious, this is how the `run.py` script works. Study the source code of `run.py` to figure out how to set up a viewer.
+
+## Bytecode Instrumentation
+
+The engine counts the number of bytecodes used by code. It does this by inserting a function call, `__increment__()`, in between every single bytecode (each function call requires 3 bytecodes, so this increases the code size by 4x).
+
+Python bytecode post-3.6 consists of two bytes each. The first byte corresponds to the instruction, and the second byte to the argument. In case the argument needs to be bigger than one byte, additional `EXTENDED_ARG` are inserted before, containing the higher bits of the argument. At most 3 of them are allowed per instruction.

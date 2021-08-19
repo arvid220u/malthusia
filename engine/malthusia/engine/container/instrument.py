@@ -50,13 +50,17 @@ class Instrument:
             dis.Instruction(opcode=131, opname='CALL_FUNCTION', arg=0, argval=0, argrepr=0, offset=None, starts_line=None, is_jump_target=False),
             dis.Instruction(opcode=1, opname='POP_TOP', arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=False)
         ]
-        #extends the opargs so that it can store the index of __instrument__
+        # extends the opargs so that it can store the index of __instrument__
+        inserted_extended_args = 0
         while function_name_index > 255: #(255 = 2^8 -1 = 1 oparg)
+            if inserted_extended_args >= 3:
+                # we can only insert 3! so abort!
+                raise SyntaxError("Too many extended_args wanting to be inserted; possibly too many co_names (more than 2^32).")
             function_name_index >>= 8
             injection = [
                 dis.Instruction(
-                    opcode=144,
-                    opname='EXTENDED_ARGS',
+                    opcode=dis.opmap["EXTENDED_ARG"],
+                    opname='EXTENDED_ARG',
                     arg=function_name_index%256,
                     argval=function_name_index%256,
                     argrepr=function_name_index%256,
@@ -66,7 +70,7 @@ class Instrument:
                 )
             ] + injection
 
-        # For maintenance we add an empty jump_to field to each instruction
+        # convert every instruction into our own instruction format, which adds a couple of fields.
         for i, instruction in enumerate(instructions):
             instructions[i] = Instruction(instruction)
 
@@ -76,6 +80,8 @@ class Instrument:
             if not instruction.is_jumper():
                 continue
 
+            # TODO: shouldn't target here depend on whether it is an absolute or relative jumper?
+            # for both of them, however, we need to do some fancy keeping track of to keep track of them
             target = [t for t in instructions if instruction.argval == t.offset][0]
             instruction.jump_to = target
 
@@ -89,7 +95,7 @@ class Instrument:
         cur_index = -1
         for (cur, last) in zip(instructions[:], [None]+instructions[:-1]):
             cur_index += 1
-            if last is not None and last.opcode == 144: #EXTEND_ARG
+            if last is not None and last.opcode == dis.opmap["EXTENDED_ARG"]:
                 continue
 
             if last is not None and last.opcode in unsafe:
