@@ -34,7 +34,7 @@ class Instrument:
         :return: a new code object that has been injected with our bytecode counter
         """
 
-        logger.debug("hello from instrument!")
+        logger.debug(dis.Bytecode(bytecode).dis())
 
         # Ensure all code constants (e.g. list comprehensions) are also instrumented.
         new_consts = []
@@ -76,7 +76,8 @@ class Instrument:
         # now compute jump offset for every jumper
         for i, instruction in enumerate(instructions):
             if instruction.is_jumper():
-                instruction.calculate_orig_jump_target_offset(instructions[max(i-3,0):i])
+                instruction.calculate_orig_jump_target_offset()
+                logger.debug(f"instr {instruction.offset} orig jump target offset: {instruction.orig_jump_target_offset}")
 
         #unsafe = {110, 113, 114, 115, 116, 120, 124, 125, 131}  # bytecode ops that break the instrument
 
@@ -100,6 +101,7 @@ class Instrument:
         # insert a new EXTENDED_ARGS, break out of the loop.
         fixed = False
         while not fixed:
+            logger.debug("trying to fix the instruction jumps")
             fixed = True
 
             # calculate new offsets
@@ -159,6 +161,7 @@ class Instrument:
                 cur_extended_args = []
 
             assert(len(cur_extended_args)==0)
+            instructions = new_instructions
 
         # calculate new offsets
         for i, instruction in enumerate(instructions):

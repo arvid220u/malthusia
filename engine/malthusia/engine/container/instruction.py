@@ -10,29 +10,17 @@ class Instruction(SimpleNamespace):
         vals["orig_jump_target_offset"] = None
         super().__init__(**vals)
 
-    def calculate_orig_jump_target_offset(self, preceding_3_instructions):
+    def calculate_orig_jump_target_offset(self):
         assert(self.offset is not None)
         assert(self.original)
         assert(self.is_jumper())
         assert(self.offset == self.orig_offset)
-        real_arg = self.get_full_arg(preceding_3_instructions)
         if self.is_rel_jumper():
-            self.orig_jump_target_offset = self.orig_offset + real_arg + 2
+            self.orig_jump_target_offset = self.orig_offset + self.arg + 2
         elif self.is_abs_jumper():
-            self.orig_jump_target_offset = real_arg
+            self.orig_jump_target_offset = self.arg
         else:
             assert(False)
-
-    def get_full_arg(self, preceding_3_instructions):
-        arg = self.arg
-        multiplier = 1
-        for instr in preceding_3_instructions[::-1]:
-            multiplier <<= 8
-            if instr.is_extended_arg():
-                arg += multiplier * instr.arg
-            else:
-                break
-        return arg
 
     def is_jumper(self):
         return self.is_rel_jumper() or self.is_abs_jumper()
