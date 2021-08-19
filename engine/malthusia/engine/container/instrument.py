@@ -50,6 +50,7 @@ class Instrument:
             dis.Instruction(opcode=131, opname='CALL_FUNCTION', arg=0, argval=0, argrepr=0, offset=None, starts_line=None, is_jump_target=False),
             dis.Instruction(opcode=1, opname='POP_TOP', arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=False)
         ]
+        injection = [Instruction(inst, original=False) for inst in injection]
         # extends the opargs so that it can store the index of __instrument__
         inserted_extended_args = 0
         while function_name_index > 255: #(255 = 2^8 -1 = 1 oparg)
@@ -58,56 +59,35 @@ class Instrument:
                 raise SyntaxError("Too many extended_args wanting to be inserted; possibly too many co_names (more than 2^32).")
             function_name_index >>= 8
             injection = [
-                dis.Instruction(
-                    opcode=dis.opmap["EXTENDED_ARG"],
-                    opname='EXTENDED_ARG',
-                    arg=function_name_index%256,
-                    argval=function_name_index%256,
-                    argrepr=function_name_index%256,
-                    offset=None,
-                    starts_line=None,
-                    is_jump_target=False
-                )
+                Instruction.ExtendedArgs(function_name_index%256)
             ] + injection
+            inserted_extended_args += 1
 
         # convert every instruction into our own instruction format, which adds a couple of fields.
         for i, instruction in enumerate(instructions):
-            instructions[i] = Instruction(instruction)
+            instructions[i] = Instruction(instruction, original=True)
 
-        # Next, we cache a reference to the jumpers to each jump target in the targets
+        # now compute jump offset for every jumper
         for i, instruction in enumerate(instructions):
-            # We're only looking for jumpers
-            if not instruction.is_jumper():
-                continue
+            if instruction.is_jumper():
+                instruction.calculate_orig_jump_target_offset(instructions[max(i-3,0):i])
 
-            # TODO: shouldn't target here depend on whether it is an absolute or relative jumper?
-            # yep, this should definitely not work for relative jumps
-            # for both of them, however, we need to do some fancy keeping track of to keep track of them
-            target = [t for t in instructions if instruction.argval == t.offset][0]
-            instruction.jump_to = target
-
-            # If any targets jump to themselves, that's not kosher.
-            if instruction == target:
-                raise SyntaxError('No self-referential loops.')
-
-        unsafe = {110, 113, 114, 115, 116, 120, 124, 125, 131}  # bytecode ops that break the instrument
+        #unsafe = {110, 113, 114, 115, 116, 120, 124, 125, 131}  # bytecode ops that break the instrument
 
         # We then inject the injection before every call, except for those following an EXTENDED_ARGS.
-        cur_index = -1
-        for (cur, last) in zip(instructions[:], [None]+instructions[:-1]):
-            cur_index += 1
-            if last is not None and last.opcode == dis.opmap["EXTENDED_ARG"]:
+        new_instructions = []
+        for (cur, last) in zip(instructions, [None]+instructions[:-1]):
+
+            if last is not None and last.is_extended_arg():
+                new_instructions.append(cur)
                 continue
 
-            if last is not None and last.opcode in unsafe:
-                continue
+            for inject in injection:
+                new_instructions.append(inject)
 
-            for j, inject in enumerate(injection):
-                injected_instruction = Instruction(inject)
-                injected_instruction.was_there = False # keeping track of the instructions added by us
-                instructions.insert(cur_index + j, injected_instruction)
-            cur_index += len(injection)
+            new_instructions.append(cur)
 
+        instructions = new_instructions
 
         # Iterate through instructions. If it's a jumper, calculate the new correct offset. For each new offset, if it
         # is too large to fit in the current number of EXTENDED_ARGS, inject a new EXTENDED_ARG before it. If you never
@@ -116,34 +96,68 @@ class Instrument:
         while not fixed:
             fixed = True
 
-            i = 0
-            for instruction in instructions[:]:
-                instruction.offset = 2 * i
+            # calculate new offsets
+            for i, instruction in enumerate(instructions):
+                instruction.offset = 2*i
 
+            # calculate map from orig_offset to cur_offset
+            orig_to_curr_offset = {}
+            for i, instruction in enumerate(instructions):
+                if not instruction.original:
+                    continue
+                cur_offset = instruction.offset
+                for prev_instr in instructions[max(i-3,0):i][::-1]:
+                    if prev_instr.is_extended_arg():
+                        cur_offset -= 2
+                        assert(cur_offset == prev_instr.offset)
+                    else:
+                        break
+                orig_to_curr_offset[instruction.orig_offset] = cur_offset
+
+            # now transform each jumper's argument to point to the cur offset instead of the orig offset
+            new_instructions = []
+            cur_extended_args = []
+            for instruction in instructions:
+                if instruction.is_extended_arg():
+                    cur_extended_args.append(instruction)
+                    continue
                 if not instruction.is_jumper():
-                    i += 1
+                    new_instructions.extend(cur_extended_args)
+                    new_instructions.append(instruction)
+                    cur_extended_args = []
                     continue
 
-                correct_offset = instruction.calculate_offset(instructions)
-                instruction.arg = correct_offset % 256
-                correct_offset >>= 8
 
-                extended_args = 0
-                while correct_offset > 0:
-                    # Check if there is already an EXTENDED_ARGS behind
-                    if i > extended_args and instructions[i - extended_args - 1].opcode == 144:
-                        instructions[i - extended_args - 1].arg = correct_offset % 256
 
-                    # Otherwise, insert a new one
+                real_arg = instruction.calculate_jump_arg(orig_to_curr_offset)
+                instruction.arg = real_arg % 256
+                real_arg >>= 8
+
+                cur_extended_args_i = len(cur_extended_args) - 1
+                while real_arg > 0:
+                    if cur_extended_args_i > -1:
+                        # modify the existing extended args
+                        cur_extended_args[cur_extended_args_i].arg = real_arg % 256
+                        cur_extended_args_i -= 1
                     else:
-                        instructions.insert(i, Instruction.ExtendedArgs(correct_offset % 256))
-                        instruction.extra_extended_args += 1
-                        i += 1
+                        # insert a new extended args
+                        cur_extended_args = [Instruction.ExtendedArgs(real_arg % 256)] + cur_extended_args
+                        # this causes us to have to redo everything again
                         fixed = False
+                    real_arg >>= 8
+                assert(cur_extended_args_i == -1) # we may never decrease the offsets, or something went very wrong (we only add instructions, which should monotonically increase offsets)
+                assert(len(cur_extended_args) <= 3) # max 3 extended args
 
-                    correct_offset >>= 8
-                    extended_args += 1
-                i += 1
+                new_instructions.extend(cur_extended_args)
+                new_instructions.append(instruction)
+                cur_extended_args = []
+
+            assert(len(cur_extended_args)==0)
+
+        # calculate new offsets
+        for i, instruction in enumerate(instructions):
+            instruction.offset = 2*i
+
         #Maintaining correct line info ( traceback bug fix)
         #co_lnotab stores line information in Byte form
         # It stores alterantively, the number of instructions to the next increase in line number and
@@ -153,58 +167,60 @@ class Instrument:
         #It should be similar to the way the jump to statement were fixed, I tried to mimick them but failed, I feel like I do not inderstand instruction.py
         # I am overestimating the number of instructions before the start of the line in this fix
         # you might find the end of this article helpful: https://towardsdatascience.com/understanding-python-bytecode-e7edaae8734d
-        old_lnotab = {} #stores the old right info in a more usefull way (maps instruction num to line num)
-        i = 0
-        line_num = 0 #maintains line number by adding differences
-        instruction_num = 0 #maintains the instruction num by addind differences
-        while 2*i < len(bytecode.co_lnotab):
-            instruction_num += bytecode.co_lnotab[2 * i]
-            line_num += bytecode.co_lnotab[2 * i + 1]
-            old_lnotab[instruction_num] = line_num
-            i += 1
-        #Construct a map from old instruction numbers, to new ones.
-        num_injected = 0
-        instruction_index = 0
-        old_to_new_instruction_num = {}
-        for instruction in instructions:
-            if instruction.was_there:
-                old_to_new_instruction_num[2 * (instruction_index - num_injected)] = 2 * instruction_index
-            instruction_index += 1
-            if not instruction.was_there:
-                num_injected += 1
-        new_lnotab = {}
-        for key in old_lnotab:
-            new_lnotab[old_to_new_instruction_num[key]] = old_lnotab[key]
-
-        #Creating a differences list of integers, while ensuring integers in it are bytes
-        pairs = sorted(new_lnotab.items())
-        new_lnotab = []
-        previous_pair = (0, 0)
-        for pair in pairs:
-            num_instructions = pair[0] - previous_pair[0]
-            num_lines = pair[1] - previous_pair[1]
-            while num_instructions > 127:
-                new_lnotab.append(127)
-                new_lnotab.append(0)
-                num_instructions -= 127
-            new_lnotab.append(num_instructions)
-            while num_lines > 127:
-                new_lnotab.append(127)
-                new_lnotab.append(0)
-                num_lines -= 127
-            new_lnotab.append(num_lines)
-            previous_pair = pair
-        #tranfer to bytes and we are good :)
-        new_lnotab = bytes(new_lnotab)
+        # old_lnotab = {} #stores the old right info in a more usefull way (maps instruction num to line num)
+        # i = 0
+        # line_num = 0 #maintains line number by adding differences
+        # instruction_num = 0 #maintains the instruction num by addind differences
+        # while 2*i < len(bytecode.co_lnotab):
+        #     instruction_num += bytecode.co_lnotab[2 * i]
+        #     line_num += bytecode.co_lnotab[2 * i + 1]
+        #     old_lnotab[instruction_num] = line_num
+        #     i += 1
+        # #Construct a map from old instruction numbers, to new ones.
+        # num_injected = 0
+        # instruction_index = 0
+        # old_to_new_instruction_num = {}
+        # for instruction in instructions:
+        #     if instruction.was_there:
+        #         old_to_new_instruction_num[2 * (instruction_index - num_injected)] = 2 * instruction_index
+        #     instruction_index += 1
+        #     if not instruction.was_there:
+        #         num_injected += 1
+        # new_lnotab = {}
+        # for key in old_lnotab:
+        #     new_lnotab[old_to_new_instruction_num[key]] = old_lnotab[key]
+        #
+        # #Creating a differences list of integers, while ensuring integers in it are bytes
+        # pairs = sorted(new_lnotab.items())
+        # new_lnotab = []
+        # previous_pair = (0, 0)
+        # for pair in pairs:
+        #     num_instructions = pair[0] - previous_pair[0]
+        #     num_lines = pair[1] - previous_pair[1]
+        #     while num_instructions > 127:
+        #         new_lnotab.append(127)
+        #         new_lnotab.append(0)
+        #         num_instructions -= 127
+        #     new_lnotab.append(num_instructions)
+        #     while num_lines > 127:
+        #         new_lnotab.append(127)
+        #         new_lnotab.append(0)
+        #         num_lines -= 127
+        #     new_lnotab.append(num_lines)
+        #     previous_pair = pair
+        # #tranfer to bytes and we are good :)
+        # new_lnotab = bytes(new_lnotab)
 
         # Finally, we repackage up our instructions into a byte string and use it to build a new code object
-        byte_array = [[inst.opcode, 0 if inst.arg is None else inst.arg % 256] for inst in instructions]
+        assert(all([inst.arg is None or (0 <= inst.arg and inst.arg < 256) for inst in instructions]))
+        byte_array = [[inst.opcode, 0 if inst.arg is None else inst.arg] for inst in instructions]
         new_code = bytes(sum(byte_array, []))
 
         # Make sure our code can locate the __instrument__ call
         new_names = tuple(bytecode.co_names) + ('__instrument__', )
 
-        return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
+        # return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
+        return Instrument.build_code(bytecode, new_code, new_names, new_consts, bytecode.co_lnotab)
 
     @staticmethod
     def build_code(old_code, new_code, new_names, new_consts, new_lnotab):

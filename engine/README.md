@@ -86,3 +86,5 @@ Python bytecode post-3.6 consists of two bytes each. The first byte corresponds 
 The bytecodes operate on a stack machine. That is, most operations are performed on the top x stack elements. Here is a list of all bytecode instructions: https://docs.python.org/3/library/dis.html#python-bytecode-instructions.
 
 The bytecode instrumentation is not perfect, because many of the bytecodes are not constant time. For example, `BUILD_STRING(i)` concatenates `i` strings, which should probably cost `i` bytecodes and not 1 bytecode. But meh, seems relatively benign.
+
+Note: `is_jump_target` is never set on the extended args, but always on the root instruction. However, the jump target is the extended args instruction.
