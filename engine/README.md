@@ -1,6 +1,6 @@
 # snek
 
-This repository contains all the code for the Battlecode Python engine.
+This repository contains all the code for the Malthusia engine, based on the [battlehack20 engine](https://github.com/battlecode/battlehack20/tree/master/engine) by MIT Battlecode.
 
 ## Installation and Usage
 
