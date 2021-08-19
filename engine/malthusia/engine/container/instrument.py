@@ -1,7 +1,11 @@
 import dis
 import math
+import logging
+import os
 from types import CodeType
 from .instruction import Instruction
+
+logger = logging.getLogger(__name__)
 
 class Instrument:
     """
@@ -29,6 +33,8 @@ class Instrument:
         :param bytecode: a code object, the bytecode submitted by the player
         :return: a new code object that has been injected with our bytecode counter
         """
+
+        logger.debug("hello from instrument!")
 
         # Ensure all code constants (e.g. list comprehensions) are also instrumented.
         new_consts = []
