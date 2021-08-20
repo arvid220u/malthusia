@@ -72,7 +72,7 @@ class RobotRunner:
         self.globals['__builtins__']['__multinstrument__'] = self.multinstrument_call
         self.globals['__builtins__']['__import__'] = self.import_call
         self.globals['__builtins__']['_getitem_'] = self.getitem_call
-        self.globals['__builtins__']['_write_'] = self.write_call
+        self.globals['__builtins__']['_write_'] = lambda obj: self.write_call(obj, game_methods.values())
         self.globals['__builtins__']['_getiter_'] = lambda i: i
         self.globals['__builtins__']['_inplacevar_'] = self.inplacevar_call
         self.globals['__builtins__']['_unpack_sequence_'] = Guards.guarded_unpack_sequence
@@ -122,12 +122,15 @@ class RobotRunner:
             raise SyntaxError('Unsupported in place op "' + op + '".')
 
     @staticmethod
-    def write_call(obj):
+    def write_call(obj, disallowed_objs):
         if isinstance(obj, type(sys)):
             raise RuntimeError('Can\'t write to modules.')
 
         elif isinstance(obj, type(lambda: 1)):
             raise RuntimeError('Can\'t write to functions.')
+
+        elif obj in disallowed_objs:
+            raise RuntimeError(f'Can\'t write to {obj}')
 
         return obj
 
