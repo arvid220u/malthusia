@@ -2,6 +2,7 @@ import dis
 import math
 import logging
 import os
+import sys
 from types import CodeType
 from .instruction import Instruction
 
@@ -267,18 +268,36 @@ class Instrument:
     @staticmethod
     def build_code(old_code, new_code, new_names, new_consts, new_lnotab):
         """Helper method to build a new code object because Python does not allow us to modify existing code objects"""
-        return CodeType(old_code.co_argcount,
-                        old_code.co_kwonlyargcount,
-                        old_code.co_nlocals,
-                        old_code.co_stacksize,
-                        old_code.co_flags,
-                        new_code,
-                        new_consts,
-                        new_names,
-                        old_code.co_varnames,
-                        old_code.co_filename,
-                        old_code.co_name,
-                        old_code.co_firstlineno,
-                        new_lnotab,
-                        old_code.co_freevars,
-                        old_code.co_cellvars)
+        if sys.version_info >= (3, 8):
+            return CodeType(old_code.co_argcount,
+                            old_code.co_posonlyargcount,
+                            old_code.co_kwonlyargcount,
+                            old_code.co_nlocals,
+                            old_code.co_stacksize,
+                            old_code.co_flags,
+                            new_code,
+                            new_consts,
+                            new_names,
+                            old_code.co_varnames,
+                            old_code.co_filename,
+                            old_code.co_name,
+                            old_code.co_firstlineno,
+                            new_lnotab,
+                            old_code.co_freevars,
+                            old_code.co_cellvars)
+        else:
+            return CodeType(old_code.co_argcount,
+                            old_code.co_kwonlyargcount,
+                            old_code.co_nlocals,
+                            old_code.co_stacksize,
+                            old_code.co_flags,
+                            new_code,
+                            new_consts,
+                            new_names,
+                            old_code.co_varnames,
+                            old_code.co_filename,
+                            old_code.co_name,
+                            old_code.co_firstlineno,
+                            new_lnotab,
+                            old_code.co_freevars,
+                            old_code.co_cellvars)
