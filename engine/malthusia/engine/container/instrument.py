@@ -16,7 +16,7 @@ class Instrument:
         self.runner = runner
 
     def instrumented_sorted(self, iterable, key=None, reverse=False):
-        cost = len(iterable) * int(math.log(len(iterable)))
+        cost = len(iterable) * int(math.log(len(iterable) + 3))
         self.runner.multinstrument_call(cost)
         if not key and not reverse:
             return sorted(iterable)
