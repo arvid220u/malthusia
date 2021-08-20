@@ -95,3 +95,11 @@ class Builtins:
 
     def _getitem_(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
+
+    def str(self, real_class):
+        multinstrument_call = self.runner.multinstrument_call
+        class internal(str):
+            def capitalize(self) -> str:
+                multinstrument_call(len(self)/4)
+                return super().capitalize()
+        return internal

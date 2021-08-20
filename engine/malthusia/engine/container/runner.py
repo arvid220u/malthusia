@@ -153,8 +153,8 @@ class RobotRunner:
                 instrumented_builtin = getattr(self.builtins, builtin)
                 self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
             elif builtin in builtin_classes:
-                logger.warn("skipping builtin because it is a class:")
-                logger.warn(builtin)
+                instrumented_builtin = getattr(self.builtins, builtin)
+                self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
             elif builtin in builtin_errors:
                 logger.warn("skipping builtin because it is an error:")
                 logger.warn(builtin)
