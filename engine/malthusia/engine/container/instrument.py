@@ -26,6 +26,7 @@ class Instrument:
             return sorted(iterable, reverse=reverse)
         return sorted(iterable, key=key, reverse=reverse)
 
+    # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
     def instrument(bytecode):
         """
