@@ -1,4 +1,3 @@
-import random
 
 from malthusia.stubs import *
 
@@ -10,6 +9,7 @@ def dlog(str):
     if DEBUG > 0:
         log(str)
 
+i = 0
 
 def check_space_wrapper(r, c, board_size):
     # check space, except doesn't hit you with game errors
@@ -66,9 +66,10 @@ def turn():
             index = board_size - 1
 
         for _ in range(board_size):
-            i = random.randint(0, board_size - 1)
+            global i
             if not check_space(index, i):
                 spawn(index, i)
+                i += 1
                 dlog('Spawned unit at: (' + str(index) + ', ' + str(i) + ')')
                 break
 

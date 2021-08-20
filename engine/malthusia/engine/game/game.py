@@ -251,6 +251,9 @@ class Game:
         Only the HQ can spawn units, and it can only spawn one unit per turn.
         :loc should be given as a tuple (row, col), the space to spawn on
         """
+        if type(row) != type(1) or type(col) != type(1) or type(robot) != type(Robot(0,0,0,0)):
+            raise RobotError("types are incorrect")
+        
         if robot.has_moved:
             raise RobotError('you have already spawned a unit this turn')
 
