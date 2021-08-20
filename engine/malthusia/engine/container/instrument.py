@@ -211,6 +211,10 @@ class Instrument:
                         new_lnotab += [bytesdiff, linediff]
         else:
             assert(len(bytecode.co_lnotab) == 0)
+        # convert signed linediff to unsigned
+        for i, x in enumerate(new_lnotab):
+            if x < 0:
+                new_lnotab[i] = x + 2**8
         new_lnotab = bytes(new_lnotab)
 
 

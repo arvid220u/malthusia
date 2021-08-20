@@ -1,11 +1,13 @@
 import sys
 import traceback
+import logging
 
 from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, Guards
 from threading import Thread, Event
 from time import sleep
 from .instrument import Instrument
 
+logger = logging.getLogger(__name__)
 
 class RobotThread(Thread):
     def __init__(self, runner):
@@ -166,10 +168,10 @@ class RobotRunner:
             raise ImportError('No relative imports (yet).')
 
         if not name in self.code:
-            if name == 'random':
-                import random
-                return random
-            
+            # almost all libraries will be very unsafe
+            # for example, any library containing a class will allow bots to communicate with each other
+            # by writing to a new class property.
+            # math is fine, because it contains only functions and primitive types
             if name == 'math':
                 import math
                 return math
