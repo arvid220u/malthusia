@@ -70,6 +70,7 @@ def turn():
             if not check_space(index, i):
                 spawn(index, i)
                 i += 1
+                i = i % board_size
                 dlog('Spawned unit at: (' + str(index) + ', ' + str(i) + ')')
                 break
 

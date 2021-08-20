@@ -253,7 +253,7 @@ class Game:
         """
         if type(row) != type(1) or type(col) != type(1) or type(robot) != type(Robot(0,0,0,0)):
             raise RobotError("types are incorrect")
-        
+
         if robot.has_moved:
             raise RobotError('you have already spawned a unit this turn')
 
