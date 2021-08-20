@@ -4,16 +4,23 @@ import dis
 
 opcount = 0
 
+def profilef(frame, event, arg):
+    if event == "c_call":
+        print(frame)
+        print(event)
+        print(arg)
+
 def tracef(frame, event, arg):
     if event == "call":
         frame.f_trace_opcodes = True
+        print(frame)
         return tracef
     if event == "opcode":
         global opcount
         opcount += 1
-        print(dis.opname[frame.f_code.co_code[frame.f_lasti]])
-        print(event)
-        print(arg)
+        #print(dis.opname[frame.f_code.co_code[frame.f_lasti]])
+        #print(event)
+        #print(arg)
 
 def instrument():
     global opcount
@@ -31,10 +38,27 @@ l = sorted(l)
 d = ().__class__.__base__.__subclasses__()
 print(d)
 """
-m = 2
-if m==1:
+s2 = """
+#import math
+x = "arvid"
+y = x.join(["a","b"])
+
+#s = math.factorial(100)
+
+l = sorted([3,2])
+
+def hi():
+    return 2
+
+l2 = hi()
+"""
+m = 0
+if m==0:
+    sys.setprofile(profilef)
+    exec(s2)
+elif m==1:
     sys.settrace(tracef)
-    exec(s)
+    exec(s2)
     print(f"opcount: {opcount}")
 elif m == 2:
     from malthusia.engine.container.instrument import Instrument

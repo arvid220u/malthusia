@@ -86,9 +86,88 @@ class RobotRunner:
         self.globals['__builtins__']['enumerate'] = enumerate
         self.globals['__builtins__']['set'] = set
         self.globals['__builtins__']['frozenset'] = frozenset
+        self.globals['__builtins__']['sorted'] = sorted
 
-        # instrumented methods
-        self.globals['__builtins__']['sorted'] = self.builtins.instrumented_sorted
+        builtin_errors = {"ArithmeticError",
+                          "AssertionError",
+                          'AttributeError',
+                          'BaseException',
+                          'BufferError',
+                          'BytesWarning',
+                          'DeprecationWarning',
+                          'EOFError',
+                          'EnvironmentError',
+                          'Exception',
+                          'FloatingPointError',
+                          'FutureWarning',
+                          'GeneratorExit',
+                          'IOError',
+                          'ImportError',
+                          'ImportWarning',
+                          'IndentationError',
+                          'IndexError',
+                          'KeyError',
+                          'KeyboardInterrupt',
+                          'LookupError',
+                          'MemoryError',
+                          'NameError',
+                          'NotImplementedError',
+                          'OSError',
+                          'OverflowError',
+                          'PendingDeprecationWarning',
+                          'ReferenceError',
+                          'RuntimeError',
+                          'RuntimeWarning',
+                          'StopIteration',
+                          'SyntaxError',
+                          'SyntaxWarning',
+                          'SystemError',
+                          'SystemExit',
+                          'TabError',
+                          'TypeError',
+                          'UnboundLocalError',
+                          'UnicodeDecodeError',
+                          'UnicodeEncodeError',
+                          'UnicodeError',
+                          'UnicodeTranslateError',
+                          'UnicodeWarning',
+                          'UserWarning',
+                          'ValueError',
+                          'Warning',
+                          'ZeroDivisionError'}
+        not_instrumented_builtins = {"None", "False", "True"}
+        builtin_classes = {"bool", "bytes", "complex", "float", "int", "range", "slice", "str", "tuple", "zip", "list", "set", "frozenset"}
+        builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_"}
+        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate"}
+        disallowed_builtins = ["id"]
+
+        for builtin in disallowed_builtins:
+            del self.globals["__builtins__"][builtin]
+
+        logger.debug("BUILTINS")
+        for builtin in self.globals['__builtins__']:
+            logger.debug(self.globals['__builtins__'][builtin])
+            if builtin in not_instrumented_builtins:
+                continue
+            elif builtin in builtin_functions:
+                instrumented_builtin = getattr(self.builtins, builtin)
+                self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
+            elif builtin in builtin_classes:
+                logger.warn("skipping builtin because it is a class:")
+                logger.warn(builtin)
+            elif builtin in builtin_errors:
+                logger.warn("skipping builtin because it is an error:")
+                logger.warn(builtin)
+            elif builtin in builtin_instrumentation_artifacts:
+                continue
+            else:
+                logger.error("builtin not expected:")
+                logger.error(builtin)
+                assert(False)
+
+        logger.debug("BUILTINS")
+        logger.debug(self.globals['__builtins__'])
+        logger.debug("END BUILTINS")
 
         for key, value in game_methods.items():
             self.globals['__builtins__'][key] = value
@@ -173,7 +252,7 @@ class RobotRunner:
 
     def multinstrument_call(self, n):
         if n < 0:
-            raise ValueError('n must be greater than 0')
+            raise ValueError('n must be greater than or equal to 0')
         self.bytecode -= n
         self.check_bytecode()
 
