@@ -28,9 +28,7 @@ class Robot:
         self.runner.kill()
 
     def log(self, msg):
-        if not isinstance(msg, str):
-            raise RuntimeError('Can only log strings.')
-
+        msg = str(msg)
         self.logs.append({'type': 'log', 'msg': msg})
 
         if self.debug:

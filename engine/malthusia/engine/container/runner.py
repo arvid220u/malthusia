@@ -6,6 +6,7 @@ from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, 
 from threading import Thread, Event
 from time import sleep
 from .instrument import Instrument
+from .builtins import Builtins
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class RobotRunner:
 
     def __init__(self, code, game_methods, log_method, error_method, debug=False):
         self.instrument = Instrument(self)
+        self.builtins = Builtins(self)
         self.locals = {}
         self.globals = {
             '__builtins__': dict(i for dct in [safe_builtins, limited_builtins] for i in dct.items()),
@@ -86,7 +88,7 @@ class RobotRunner:
         self.globals['__builtins__']['frozenset'] = frozenset
 
         # instrumented methods
-        self.globals['__builtins__']['sorted'] = self.instrument.instrumented_sorted
+        self.globals['__builtins__']['sorted'] = self.builtins.instrumented_sorted
 
         for key, value in game_methods.items():
             self.globals['__builtins__'][key] = value

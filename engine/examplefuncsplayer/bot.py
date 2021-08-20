@@ -28,6 +28,10 @@ def turn():
     dlog('Starting Turn!')
     board_size = get_board_size()
 
+    l = [1,3,2]
+    l = sorted(l)
+    dlog(l)
+
     team = get_team()
     opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
     dlog('Team: ' + str(team))

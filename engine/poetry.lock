@@ -118,16 +118,14 @@ testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "requests", "xm
 
 [[package]]
 name = "restrictedpython"
-version = "4.0b4"
+version = "5.1"
 description = "RestrictedPython is a defined subset of the Python language which allows to provide a program input into a trusted environment."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <3.10"
 
 [package.extras]
-develop = ["isort", "pdbpp"]
-docs = ["sphinx"]
-release = ["zest.releaser"]
+docs = ["sphinx", "sphinx-rtd-theme"]
 test = ["pytest", "pytest-mock"]
 
 [[package]]
@@ -160,8 +158,8 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.6"
-content-hash = "8d7b75487bc8c741498cd506f57f55805e5ce32dcc7df145e20a894382c0aded"
+python-versions = ">=3.6,<3.10"
+content-hash = "02e1379376220e19245a0eb2ea4a8d8e5810060f0806caebf81357d94a1c72e0"
 
 [metadata.files]
 atomicwrites = [
@@ -205,8 +203,8 @@ pytest = [
     {file = "pytest-6.2.4.tar.gz", hash = "sha256:50bcad0a0b9c5a72c8e4e7c9855a3ad496ca6a881a3641b4260605450772c54b"},
 ]
 restrictedpython = [
-    {file = "RestrictedPython-4.0b4-py2.py3-none-any.whl", hash = "sha256:ccba5c97382528e2b3ac48137146d332963dee99a63280a392bb13f8ff45ff92"},
-    {file = "RestrictedPython-4.0b4.tar.gz", hash = "sha256:051fcc623788c15358ca158a0fd7cbbe530f5cd2dcb70680db1322b90e1b9465"},
+    {file = "RestrictedPython-5.1-py2.py3-none-any.whl", hash = "sha256:bd0eb3b2188642926570fa7ec725cac5660f69c4f7aa66d6e869525e189a3196"},
+    {file = "RestrictedPython-5.1.tar.gz", hash = "sha256:9ae16e500782b41bd1abefd8554ccb26330817bba9ce090d385aa226f1ca83e8"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},

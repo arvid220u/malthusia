@@ -15,16 +15,6 @@ class Instrument:
     def __init__(self, runner):
         self.runner = runner
 
-    def instrumented_sorted(self, iterable, key=None, reverse=False):
-        cost = len(iterable) * int(math.log(len(iterable) + 3))
-        self.runner.multinstrument_call(cost)
-        if not key and not reverse:
-            return sorted(iterable)
-        elif not reverse:
-            return sorted(iterable, key=key)
-        elif not key:
-            return sorted(iterable, reverse=reverse)
-        return sorted(iterable, key=key, reverse=reverse)
 
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
