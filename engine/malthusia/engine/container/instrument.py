@@ -122,7 +122,8 @@ class Instrument:
                         assert(cur_offset == prev_instr.offset)
                     else:
                         break
-                orig_to_curr_offset[instruction.orig_offset] = cur_offset
+                # we want to make sure to instrument the jumped-to instruction too, so that we cannot get infinite self loops
+                orig_to_curr_offset[instruction.orig_offset] = cur_offset - len(injection)*2
 
             # now transform each jumper's argument to point to the cur offset instead of the orig offset
             new_instructions = []
@@ -176,7 +177,8 @@ class Instrument:
                     assert(cur_offset == prev_instr.offset)
                 else:
                     break
-            orig_to_curr_offset[instruction.orig_offset] = cur_offset
+            # we want to make sure to instrument the jumped-to instruction too, so that we cannot get infinite self loops
+            orig_to_curr_offset[instruction.orig_offset] = cur_offset - len(injection)*2
 
         logger.debug(f"near-final instructions: {instructions}")
 
