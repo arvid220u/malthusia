@@ -6,8 +6,9 @@ authors = ["Arvid Lunnemark <arvid.lunnemark@gmail.com>"]
 license = "GNU General Public License v3.0"
 
 [tool.poetry.dependencies]
-python = ">=3, <3.8"
+python = ">=3.6, <3.8"
 RestrictedPython = "4.0b4"
+pytest = "^6.2.4"
 
 [tool.poetry.dev-dependencies]
 

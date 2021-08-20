@@ -25,6 +25,12 @@ If your code is in a directory `~/yourcode/coolplayer` then you can run it again
 python run.py examplefuncsplayer ~/yourcode/coolplayer
 ```
 
+### Testing
+
+```
+pytest
+```
+
 ### Running Interactively
 
 Run
