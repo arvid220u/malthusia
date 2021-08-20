@@ -120,6 +120,27 @@ class RobotRunner:
         elif op == '/=':
             return x / y
 
+        elif op == '//=':
+            return x // y
+
+        elif op == '%=':
+            return x % y
+
+        elif op == '<<=':
+            return x << y
+
+        elif op == '>>=':
+            return x >> y
+
+        elif op == '^=':
+            return x ^ y
+
+        elif op == '|=':
+            return x | y
+
+        elif op == '&=':
+            return x & y
+
         else:
             raise SyntaxError('Unsupported in place op "' + op + '".')
 
