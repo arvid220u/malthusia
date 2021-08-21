@@ -250,6 +250,8 @@ class Game:
         """
         RobotRunner.validate_arguments(row, col, error_type=RobotError)
 
+        if not self.is_on_board(row, col):
+            raise RobotError('you cannot check a space that is not on the board')
         if not self.board[row][col]:
             return False
         return self.board[row][col].team
@@ -388,6 +390,8 @@ class Game:
         if self.board[robot.row][robot.col] != robot:
             raise RobotError('something went wrong; please contact the devs')
 
+        if not self.is_on_board(row, col):
+            raise RobotError('you cannot check a space that is not on the board')
         drow, dcol = abs(robot.row - row), abs(robot.col - col)
         if max(drow, dcol) > 2:
             raise RobotError('that space is not within sensory radius of this robot')
