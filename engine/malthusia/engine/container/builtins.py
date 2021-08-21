@@ -112,6 +112,9 @@ class Builtins:
     def encode(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
 
+    def append(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
     #
     # module methods
     #
