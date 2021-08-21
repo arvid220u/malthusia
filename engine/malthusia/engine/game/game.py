@@ -3,6 +3,7 @@ from .robot import Robot
 from .team import Team
 from .robottype import RobotType
 from .constants import GameConstants
+from ..container.runner import RobotRunner
 
 
 class Game:
@@ -195,6 +196,8 @@ class Game:
 
         Return the size of the board (int)
         """
+        RobotRunner.validate_arguments(error_type=RobotError)
+
         return self.board_size
 
     def get_team(self, robot):
@@ -203,6 +206,8 @@ class Game:
 
         Return the current robot's team (Team.WHITE or Team.BLACK)
         """
+        RobotRunner.validate_arguments(robot, error_type=RobotError)
+
         return robot.team
 
     def get_type(self, robot):
@@ -211,6 +216,8 @@ class Game:
 
         Return the type of the unit - either RobotType.PAWN or RobotType.OVERLORD
         """
+        RobotRunner.validate_arguments(robot, error_type=RobotError)
+
         return robot.type
 
 
@@ -223,6 +230,8 @@ class Game:
         Return the current state of the board as an array of Team.WHITE, Team.BLACK, and None, representing white-occupied,
         black-occupied, and empty squares, respectively.
         """
+        RobotRunner.validate_arguments(error_type=RobotError)
+
         board = [[None] * self.board_size for _ in range(self.board_size)]
 
         for i in range(self.board_size):
@@ -239,6 +248,8 @@ class Game:
         Checks whether a specific board space is occupied and if yes returns the team of the robot occupying the space;
         otherwise returns False. Pawns have a similar method but can only see within their sensory radius
         """
+        RobotRunner.validate_arguments(row, col, error_type=RobotError)
+
         if not self.board[row][col]:
             return False
         return self.board[row][col].team
@@ -251,8 +262,7 @@ class Game:
         Only the HQ can spawn units, and it can only spawn one unit per turn.
         :loc should be given as a tuple (row, col), the space to spawn on
         """
-        if type(row) != type(1) or type(col) != type(1) or type(robot) != type(Robot(0,0,0,0)):
-            raise RobotError("types are incorrect")
+        RobotRunner.validate_arguments(robot, row, col, error_type=RobotError)
 
         if robot.has_moved:
             raise RobotError('you have already spawned a unit this turn')
@@ -280,6 +290,8 @@ class Game:
         :new_row, new_col the position of the enemy to capture.
         Units can only capture enemy pieces that are located diagonally left or right in front of them on the board.
         """
+        RobotRunner.validate_arguments(robot, new_row, new_col, error_type=RobotError)
+
         if robot.has_moved:
             raise RobotError('this unit has already moved this turn; robots can only move once per turn')
 
@@ -320,6 +332,8 @@ class Game:
 
         Return the current location of the robot
         """
+        RobotRunner.validate_arguments(robot, error_type=RobotError)
+
         row, col = robot.row, robot.col
         if self.board[row][col] != robot:
             raise RobotError('something went wrong; please contact the devs')
@@ -331,6 +345,8 @@ class Game:
 
         Move the current unit forward. A unit can only be moved if there is no unit already occupying the space.
         """
+        RobotRunner.validate_arguments(robot, error_type=RobotError)
+
         if robot.has_moved:
             raise RobotError('this unit has already moved this turn; robots can only move once per turn')
 
@@ -367,6 +383,8 @@ class Game:
 
         HQs have a similar method but can see the full board
         """
+        RobotRunner.validate_arguments(robot, row, col, error_type=RobotError)
+
         if self.board[robot.row][robot.col] != robot:
             raise RobotError('something went wrong; please contact the devs')
 
@@ -385,6 +403,8 @@ class Game:
         Sense nearby units; returns a list of tuples of the form (row, col, robot.team) within sensor radius of this robot (excluding yourself)
         You can sense another unit other if it is within sensory radius of you; e.g. max(|robot.x - other.x|, |robot.y - other.y|) <= sensory_radius
         """
+        RobotRunner.validate_arguments(robot, error_type=RobotError)
+
         row, col = robot.row, robot.col
 
         robots = []

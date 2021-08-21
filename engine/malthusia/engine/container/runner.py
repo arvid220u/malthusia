@@ -6,7 +6,7 @@ from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, 
 from threading import Thread, Event
 from time import sleep
 from .instrument import Instrument
-from .builtins import Builtins
+from .builtins import *
 
 logger = logging.getLogger(__name__)
 
@@ -62,31 +62,20 @@ class RobotRunner:
     STARTING_BYTECODE = 20000
     EXTRA_BYTECODE = 20000
 
+    @staticmethod
+    def validate_arguments(*args, error_type):
+        for i, arg in enumerate(args):
+            if "DANGEROUS" in type(arg).__module__:
+                raise error_type(f"arguments are invalid; argument {i} has type {type(arg)} which is user-defined and possibly dangerous")
+
     def __init__(self, code, game_methods, log_method, error_method, debug=False):
         self.instrument = Instrument(self)
         self.builtins = Builtins(self)
         self.locals = {}
         self.globals = {
             '__builtins__': dict(i for dct in [safe_builtins, limited_builtins] for i in dct.items()),
-            '__name__': '__main__'
+            '__name__': 'DANGEROUS_main'
         }
-
-        self.globals['__builtins__']['__metaclass__'] = type
-        self.globals['__builtins__']['__instrument__'] = self.instrument_call
-        self.globals['__builtins__']['__multinstrument__'] = self.multinstrument_call
-        self.globals['__builtins__']['__import__'] = self.import_call
-        self.globals['__builtins__']['_getitem_'] = self.getitem_call
-        self.globals['__builtins__']['_write_'] = lambda obj: self.write_call(obj, game_methods.values())
-        self.globals['__builtins__']['_getiter_'] = lambda i: i
-        self.globals['__builtins__']['_inplacevar_'] = self.inplacevar_call
-        self.globals['__builtins__']['_unpack_sequence_'] = Guards.guarded_unpack_sequence
-        self.globals['__builtins__']['_iter_unpack_sequence_'] = Guards.guarded_iter_unpack_sequence
-
-        self.globals['__builtins__']['log'] = log_method
-        self.globals['__builtins__']['enumerate'] = enumerate
-        self.globals['__builtins__']['set'] = set
-        self.globals['__builtins__']['frozenset'] = frozenset
-        self.globals['__builtins__']['sorted'] = sorted
 
         builtin_errors = {"ArithmeticError",
                           "AssertionError",
@@ -136,11 +125,30 @@ class RobotRunner:
                           'Warning',
                           'ZeroDivisionError'}
         not_instrumented_builtins = {"None", "False", "True"}
-        builtin_classes = {"bytes", "complex", "float", "int", "range", "str", "tuple", "zip", "list", "set", "frozenset"}
-        builtin_classes_ignore = {"bool", "slice"} # we cannot subclass these, and they are generally cheap
+        builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset"}
+        builtin_classes_instrumented = {"str": instrumented_str}
+        builtin_classes_ignore = {"bool", "slice", "type"} # we cannot subclass these, and they are generally cheap
         builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_"}
         builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate"}
         disallowed_builtins = ["id"]
+
+        self.globals['__builtins__']['__metaclass__'] = type
+        self.globals['__builtins__']['__instrument__'] = self.instrument_call
+        self.globals['__builtins__']['__multinstrument__'] = self.multinstrument_call
+        self.globals['__builtins__']['__import__'] = self.import_call
+        self.globals['__builtins__']['_getitem_'] = self.getitem_call
+        self.globals['__builtins__']['_write_'] = lambda obj: self.write_call(obj, set(game_methods.values()).union(set(builtin_classes_instrumented.values())))
+        self.globals['__builtins__']['_getiter_'] = lambda i: i
+        self.globals['__builtins__']['_inplacevar_'] = self.inplacevar_call
+        self.globals['__builtins__']['_unpack_sequence_'] = Guards.guarded_unpack_sequence
+        self.globals['__builtins__']['_iter_unpack_sequence_'] = Guards.guarded_iter_unpack_sequence
+
+        self.globals['__builtins__']['log'] = log_method
+        self.globals['__builtins__']['type'] = type
+        self.globals['__builtins__']['enumerate'] = enumerate
+        self.globals['__builtins__']['set'] = set
+        self.globals['__builtins__']['frozenset'] = frozenset
+        self.globals['__builtins__']['sorted'] = sorted
 
         for builtin in disallowed_builtins:
             del self.globals["__builtins__"][builtin]
@@ -163,6 +171,8 @@ class RobotRunner:
                 continue
             elif builtin in builtin_classes_ignore:
                 continue
+            elif builtin in builtin_classes_instrumented:
+                self.globals['__builtins__'][builtin] = builtin_classes_instrumented[builtin]
             else:
                 logger.error("builtin not expected:")
                 logger.error(builtin)
@@ -285,7 +295,7 @@ class RobotRunner:
 
         my_builtins = dict(self.globals['__builtins__'])
         my_builtins['__import__'] = lambda n, g, l, f, le: self.import_call(n, g, l, f, le, caller=name)
-        run_globals = {'__builtins__': my_builtins, '__name__': name}
+        run_globals = {'__builtins__': my_builtins, '__name__': "DANGEROUS_" + name}
 
         # Loop check: keep dictionary of who imports who.  If loop, error.
         # First, we build a directed graph:

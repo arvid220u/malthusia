@@ -142,14 +142,6 @@ class Builtins:
                     yield x
         return internal
 
-    def str(self, real_class):
-        multinstrument_call = lambda x : self.runner.multinstrument_call(int(x))
-        class internal(str):
-            def capitalize(self) -> str:
-                multinstrument_call(len(self)/4)
-                return super().capitalize()
-        return internal
-
     def tuple(self, real_class):
         multinstrument_call = lambda x : self.runner.multinstrument_call(int(x))
         class internal(tuple):
@@ -189,3 +181,10 @@ class Builtins:
                 multinstrument_call(len(s) + 5)
                 return super().issubset(s)
         return internal
+
+class instrumented_str(str):
+    def capitalize(self) -> str:
+        global __multinstrument__
+        __multinstrument__(int(len(self)/4))
+        return super().capitalize()
+
