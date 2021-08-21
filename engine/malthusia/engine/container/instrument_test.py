@@ -333,7 +333,8 @@ def turn():
             210 CALL_FUNCTION            0
             212 POP_TOP
             214 BUILD_LIST               0
-            216 LOAD_GLOBAL             11 (__instrument__)
+
+ 14         216 LOAD_GLOBAL             11 (__instrument__)
             218 CALL_FUNCTION            0
             220 POP_TOP
             222 LOAD_CONST               9 (('code', 'consts', 'names', 'varnames', 'freevars', 'cellvars', 'filename', 'name', 'lnotab', 'weakreflist'))
