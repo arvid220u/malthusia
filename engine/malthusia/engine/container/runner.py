@@ -162,17 +162,19 @@ class RobotRunner:
                 instrumented_builtin = getattr(self.builtins, builtin)
                 self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
             elif builtin in builtin_classes:
-                instrumented_builtin = getattr(self.builtins, builtin)
-                self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
+                continue
+                # instrumented_builtin = getattr(self.builtins, builtin)
+                # self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
             elif builtin in builtin_errors:
-                logger.warn("skipping builtin because it is an error:")
-                logger.warn(builtin)
+                # errors are fine, there's nothing really resource intensive you can do with them
+                continue
             elif builtin in builtin_instrumentation_artifacts:
                 continue
             elif builtin in builtin_classes_ignore:
                 continue
             elif builtin in builtin_classes_instrumented:
-                self.globals['__builtins__'][builtin] = builtin_classes_instrumented[builtin]
+                continue
+                # self.globals['__builtins__'][builtin] = builtin_classes_instrumented[builtin]
             else:
                 logger.error("builtin not expected:")
                 logger.error(builtin)
