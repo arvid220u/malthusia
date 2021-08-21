@@ -200,12 +200,13 @@ class RobotRunner:
         def instrument_getattr(object, name, default=None):
             logger.debug("in instrument getattr!!!!")
             object_type = type(object)
-            if object_type.__qualname__ == "type" and object_type.__module == "builtins":
+            if object_type.__qualname__ == "type" and object_type.__module__ == "builtins":
                 object_type = object
             if object_type.__module__ != "builtins":
                 return getattr(object, name, default)
             if object_type.__qualname__ == "module" and object.__name__ != "math":
                 return getattr(object, name, default)
+            logger.debug("ok gets here")
             real_attr = getattr(object, name, default)
             logger.debug("full name of attr: " + get_full_name(real_attr))
             if get_full_name(real_attr) not in {"builtins.builtin_function_or_method", "builtins.method_descriptor"}:
@@ -214,6 +215,7 @@ class RobotRunner:
                 return real_attr
             # we want to instrument this!
             instrumented_builtin = getattr(self.builtins, name)
+            logger.debug("method descriptor? " + get_full_name(real_attr))
             if get_full_name(real_attr) == "builtins.method_descriptor":
                 # we need to do nothing more
                 return instrumented_builtin(real_attr)
