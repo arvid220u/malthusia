@@ -142,6 +142,7 @@ class RobotRunner:
         self.globals['__builtins__']['_inplacevar_'] = self.inplacevar_call
         self.globals['__builtins__']['_unpack_sequence_'] = Guards.guarded_unpack_sequence
         self.globals['__builtins__']['_iter_unpack_sequence_'] = Guards.guarded_iter_unpack_sequence
+        self.globals['__builtins__']['_getattr_'] = self.create_getattr_call(self.globals['__builtins__']['_getattr_'])
 
         self.globals['__builtins__']['log'] = log_method
         self.globals['__builtins__']['type'] = type
@@ -199,6 +200,47 @@ class RobotRunner:
         self.initialized = False
 
         self.debug = debug
+
+    def create_getattr_call(self, old_getattr):
+        def get_full_name(t):
+            return type(t).__module__ + "." + type(t).__qualname__
+
+        def instrument_getattr(object, name, default=None):
+            logger.debug("in instrument getattr!!!!")
+            object_type = type(object)
+            if object_type.__qualname__ == "type" and object_type.__module == "builtins":
+                object_type = object
+            if object_type.__module__ != "builtins":
+                return getattr(object, name, default)
+            if object_type.__qualname__ == "module" and object.__name__ != "math":
+                return getattr(object, name, default)
+            real_attr = getattr(object, name, default)
+            logger.debug("full name of attr: " + get_full_name(real_attr))
+            if get_full_name(real_attr) not in {"builtins.builtin_function_or_method", "builtins.method_descriptor"}:
+                # we only care about builtin functions or methods
+                # we also care about method descriptors
+                return real_attr
+            # we want to instrument this!
+            instrumented_builtin = getattr(self.builtins, name)
+            if get_full_name(real_attr) == "builtins.method_descriptor":
+                # we need to do nothing more
+                return instrumented_builtin(real_attr)
+            # otherwise, we need to check if __self__ is a module or not
+            logger.debug("module? " + get_full_name(real_attr.__self__))
+            if get_full_name(real_attr.__self__) == "builtins.module":
+                # we need to do nothing more
+                return instrumented_builtin(real_attr)
+            # the last case is we need to unbound the method, then rebind it
+            unbound_attr = getattr(type(object), name, default)
+            unbound_instrumented = instrumented_builtin(unbound_attr)
+            def rebind_attr(*args, **kwargs):
+                return unbound_instrumented(object, *args, **kwargs)
+            return rebind_attr
+
+        def new_getattr(object, name, default=None):
+            return old_getattr(object, name, default, getattr=instrument_getattr)
+
+        return new_getattr
 
     @staticmethod
     def inplacevar_call(op, x, y):

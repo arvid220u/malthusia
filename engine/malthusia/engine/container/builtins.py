@@ -109,6 +109,16 @@ class Builtins:
     def index(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
 
+    def encode(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    #
+    # module methods
+    #
+
+    def factorial(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: n*n*math.log(abs(n)+1))
+
 
     # TODO: remove everything below this
 
