@@ -15,16 +15,82 @@ class Instrument:
     def __init__(self, runner):
         self.runner = runner
 
+    @staticmethod
+    def replace_builtin_methods(instructions, names, consts):
+
+        added_names = ["type", "__module__"]
+        added_consts = ["builtins"]
+
+        for instruction in instructions:
+            if dis.opname[instruction.opcode] == "LOAD_METHOD":
+                added_names.append("__instrumented_" + names[instruction.arg])
+
+        name_indices = {}
+        for i, name in enumerate(names):
+            for added_name in added_names:
+                if name == added_name:
+                    name_indices[name] = i
+        for added_name in added_names:
+            if added_name not in name_indices:
+                name_indices[added_name] = len(names)
+                names = names + (added_name, )
+        const_indices = {}
+        for i, const in enumerate(consts):
+            for added_const in added_consts:
+                if const == added_const:
+                    const_indices[const] = i
+        for added_const in added_consts:
+            if added_const not in const_indices:
+                const_indices[added_const] = len(consts)
+                consts = consts + (added_const, )
+
+
+        # ALSO DO THIS FOR MATH ??
+        # find every load_method and insert a nice little injection
+        new_instructions = []
+        for instruction in instructions:
+            if dis.opname[instruction.opcode] == "LOAD_METHOD":
+
+                method_name = names[instruction.arg]
+                instrumented_method_name = "__instrumented_" + method_name
+
+                injection = [
+                    dis.Instruction(opcode=dis.opmap["DUP_TOP"], opname="DUP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_NAME"], opname="LOAD_NAME", arg=name_indices["type"], argval="type", argrepr="type", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["ROT_TWO"], opname="ROT_TWO", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["CALL_FUNCTION"], opname="CALL_FUNCTION", arg=1, argval=1, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_ATTR"], opname="LOAD_ATTR", arg=name_indices["__module__"], argval="__module__", argrepr="__module__", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_CONST"], opname="LOAD_CONST", arg=const_indices["builtins"], argval="builtins", argrepr="builtins", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["COMPARE_OP"], opname="COMPARE_OP", arg=2, argval="==", argrepr="==", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["POP_JUMP_IF_FALSE"], opname="POP_JUMP_IF_FALSE", arg=instruction.orig_offset, argval=instruction.orig_offset, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_NAME"], opname="LOAD_NAME", arg=name_indices[instrumented_method_name], argval=instrumented_method_name, argrepr=instrumented_method_name, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["ROT_TWO"], opname="ROT_TWO", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["JUMP_ABSOLUTE"], opname="JUMP_ABSOLUTE", arg=instruction.orig_offset + 2, argval=instruction.orig_offset + 2, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                ]
+                injection = [Instruction(inst, original=False) for inst in injection]
+                for inject in injection:
+                    if inject.is_jumper():
+                        inject.orig_jump_target_offset = inject.arg
+
+                new_instructions.extend(injection)
+
+            new_instructions.append(instruction)
+
+        instructions = new_instructions
+
+        return instructions, names, consts
 
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
-    def instrument(bytecode):
+    def instrument(bytecode, replace_builtins=True, instrument=True):
         """
         The primary method of instrumenting code, which involves injecting a bytecode counter between every instruction to be executed
 
         :param bytecode: a code object, the bytecode submitted by the player
         :return: a new code object that has been injected with our bytecode counter
         """
+
+        # IMPL NOTE: only original instructions can be jump targets!!!!!
 
         # Ensure all code constants (e.g. list comprehensions) are also instrumented.
         new_consts = []
@@ -38,10 +104,30 @@ class Instrument:
         logger.debug(dis.Bytecode(bytecode).dis())
 
         instructions = list(dis.get_instructions(bytecode))
+        # convert every instruction into our own instruction format, which adds a couple of fields.
+        for i, instruction in enumerate(instructions):
+            instructions[i] = Instruction(instruction, original=True)
+        # now compute jump offset for every jumper
+        for i, instruction in enumerate(instructions):
+            if instruction.is_jumper():
+                instruction.calculate_orig_jump_target_offset()
+                logger.debug(f"instr {instruction.offset} orig jump target offset: {instruction.orig_jump_target_offset}")
 
         orig_linestarts = list(dis.findlinestarts(bytecode))
 
-        function_name_index = len(bytecode.co_names)  # we will be inserting our __instrument__ call at the end of co_names
+
+        # original setup done
+
+        new_names = tuple(bytecode.co_names)
+
+        # replace builtins
+        if replace_builtins:
+            instructions, new_names, new_consts = Instrument.replace_builtin_methods(instructions, new_names, new_consts)
+
+
+        # Make sure our code can locate the __instrument__ call
+        function_name_index = len(new_names)  # we will be inserting our __instrument__ call at the end of co_names
+        new_names = new_names + ('__instrument__', )
 
         # the injection, which consists of a function call to an __instrument__ method which increments bytecode
         # these three instructions will be inserted between every line of instrumented code
@@ -64,19 +150,17 @@ class Instrument:
             inserted_extended_args += 1
             function_name_index >>= 8
 
-        # convert every instruction into our own instruction format, which adds a couple of fields.
-        for i, instruction in enumerate(instructions):
-            instructions[i] = Instruction(instruction, original=True)
-
-        # now compute jump offset for every jumper
-        for i, instruction in enumerate(instructions):
-            if instruction.is_jumper():
-                instruction.calculate_orig_jump_target_offset()
-                logger.debug(f"instr {instruction.offset} orig jump target offset: {instruction.orig_jump_target_offset}")
+        if not instrument:
+            injection = []
 
         # We then inject the injection before every call, except for those following an EXTENDED_ARGS.
         new_instructions = []
         for (cur, last) in zip(instructions, [None]+instructions[:-1]):
+
+            # we don't want to count our other injected instructions. that wouldn't be fair
+            if not cur.original:
+                new_instructions.append(cur)
+                continue
 
             if last is not None and last.is_extended_arg():
                 new_instructions.append(cur)
@@ -251,9 +335,6 @@ class Instrument:
         assert(all([inst.arg is None or (0 <= inst.arg and inst.arg < 256) for inst in instructions]))
         byte_array = [[inst.opcode, 0 if inst.arg is None else inst.arg] for inst in instructions]
         new_code = bytes(sum(byte_array, []))
-
-        # Make sure our code can locate the __instrument__ call
-        new_names = tuple(bytecode.co_names) + ('__instrument__', )
 
         # return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
         return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
