@@ -34,6 +34,10 @@ class Builtins:
             return output
         return internal
 
+    #
+    # global functions
+    #
+
     def abs(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
 
@@ -96,6 +100,17 @@ class Builtins:
 
     def _getitem_(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
+
+
+    #
+    # type methods
+    #
+
+    def index(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+
+    # TODO: remove everything below this
 
     def bytes(self, real_class):
         multinstrument_call = lambda x : self.runner.multinstrument_call(int(x))

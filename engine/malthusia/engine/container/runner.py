@@ -129,7 +129,7 @@ class RobotRunner:
         builtin_classes_instrumented = {"str": instrumented_str}
         builtin_classes_ignore = {"bool", "slice", "type"} # we cannot subclass these, and they are generally cheap
         builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_"}
-        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate"}
+        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__"}
         disallowed_builtins = ["id"]
 
         self.globals['__builtins__']['__metaclass__'] = type

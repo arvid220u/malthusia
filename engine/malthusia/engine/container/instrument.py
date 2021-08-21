@@ -357,7 +357,13 @@ class Instrument:
         new_code = bytes(sum(byte_array, []))
 
         # return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
-        return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
+        final_code = Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
+
+        logger.debug("FINAL CODE:")
+        logger.debug(dis.Bytecode(final_code).dis())
+        logger.debug("END final code")
+
+        return final_code
 
     @staticmethod
     def build_code(old_code, new_code, new_names, new_consts, new_lnotab):
