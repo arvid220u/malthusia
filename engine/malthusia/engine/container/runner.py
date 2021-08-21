@@ -125,9 +125,7 @@ class RobotRunner:
                           'Warning',
                           'ZeroDivisionError'}
         not_instrumented_builtins = {"None", "False", "True"}
-        builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset"}
-        builtin_classes_instrumented = {"str": instrumented_str}
-        builtin_classes_ignore = {"bool", "slice", "type"} # we cannot subclass these, and they are generally cheap
+        builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset", "str", "bool", "slice", "type"}
         builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_"}
         builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__"}
         disallowed_builtins = ["id"]
@@ -164,19 +162,13 @@ class RobotRunner:
                 instrumented_builtin = getattr(self.builtins, builtin)
                 self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
             elif builtin in builtin_classes:
+                # class methods/functions are instrumented using _getattr_
                 continue
-                # instrumented_builtin = getattr(self.builtins, builtin)
-                # self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
             elif builtin in builtin_errors:
                 # errors are fine, there's nothing really resource intensive you can do with them
                 continue
             elif builtin in builtin_instrumentation_artifacts:
                 continue
-            elif builtin in builtin_classes_ignore:
-                continue
-            elif builtin in builtin_classes_instrumented:
-                continue
-                # self.globals['__builtins__'][builtin] = builtin_classes_instrumented[builtin]
             else:
                 logger.error("builtin not expected:")
                 logger.error(builtin)
