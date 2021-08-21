@@ -46,7 +46,7 @@ def test_instrument():
 y = 4
 z = x + y"""
     code = compile(source, "test", "exec")
-    instrumented_code = Instrument.instrument(code)
+    instrumented_code = Instrument.instrument(code, replace_builtins=False)
     disassembly = dis.Bytecode(instrumented_code).dis()
     exp_disassembly = """  1           0 LOAD_GLOBAL              3 (__instrument__)
               2 CALL_FUNCTION            0
@@ -210,7 +210,7 @@ def turn():
     call_code(evil_array, len(evil_array))
 """
     code = compile(source, "source", "exec")
-    instrumented_code = Instrument.instrument(code)
+    instrumented_code = Instrument.instrument(code, replace_builtins=False)
     disassembly = dis.Bytecode(instrumented_code).dis()
     exp_disassembly = """  2           0 LOAD_GLOBAL             11 (__instrument__)
               2 CALL_FUNCTION            0
