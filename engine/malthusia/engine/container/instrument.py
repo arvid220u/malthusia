@@ -18,7 +18,7 @@ class Instrument:
     @staticmethod
     def replace_builtin_methods(instructions, names, consts):
 
-        added_names = ["type", "__module__"]
+        added_names = ["__safe_type__", "__module__"]
         added_consts = ["builtins"]
 
         for instruction in instructions:
@@ -56,14 +56,14 @@ class Instrument:
 
                 injection = [
                     dis.Instruction(opcode=dis.opmap["DUP_TOP"], opname="DUP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
-                    dis.Instruction(opcode=dis.opmap["LOAD_NAME"], opname="LOAD_NAME", arg=name_indices["type"], argval="type", argrepr="type", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_GLOBAL"], opname="LOAD_GLOBAL", arg=name_indices["__safe_type__"], argval="__safe_type__", argrepr="__safe_type__", offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["ROT_TWO"], opname="ROT_TWO", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["CALL_FUNCTION"], opname="CALL_FUNCTION", arg=1, argval=1, argrepr="", offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["LOAD_ATTR"], opname="LOAD_ATTR", arg=name_indices["__module__"], argval="__module__", argrepr="__module__", offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["LOAD_CONST"], opname="LOAD_CONST", arg=const_indices["builtins"], argval="builtins", argrepr="builtins", offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["COMPARE_OP"], opname="COMPARE_OP", arg=2, argval="==", argrepr="==", offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["POP_JUMP_IF_FALSE"], opname="POP_JUMP_IF_FALSE", arg=instruction.orig_offset, argval=instruction.orig_offset, argrepr="", offset=None, starts_line=None, is_jump_target=None),
-                    dis.Instruction(opcode=dis.opmap["LOAD_NAME"], opname="LOAD_NAME", arg=name_indices[instrumented_method_name], argval=instrumented_method_name, argrepr=instrumented_method_name, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_GLOBAL"], opname="LOAD_GLOBAL", arg=name_indices[instrumented_method_name], argval=instrumented_method_name, argrepr=instrumented_method_name, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["ROT_TWO"], opname="ROT_TWO", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["JUMP_ABSOLUTE"], opname="JUMP_ABSOLUTE", arg=instruction.orig_offset + 2, argval=instruction.orig_offset + 2, argrepr="", offset=None, starts_line=None, is_jump_target=None),
                 ]
@@ -96,7 +96,7 @@ class Instrument:
         new_consts = []
         for i, constant in enumerate(bytecode.co_consts):
             if type(constant) == CodeType:
-                new_consts.append(Instrument.instrument(constant))
+                new_consts.append(Instrument.instrument(constant, replace_builtins=replace_builtins, instrument=instrument))
             else:
                 new_consts.append(constant)
         new_consts = tuple(new_consts)

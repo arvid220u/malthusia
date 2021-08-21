@@ -145,6 +145,7 @@ class RobotRunner:
 
         self.globals['__builtins__']['log'] = log_method
         self.globals['__builtins__']['type'] = type
+        self.globals['__builtins__']['__safe_type__'] = type
         self.globals['__builtins__']['enumerate'] = enumerate
         self.globals['__builtins__']['set'] = set
         self.globals['__builtins__']['frozenset'] = frozenset
