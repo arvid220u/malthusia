@@ -72,6 +72,26 @@ class Instrument:
                     if inject.is_jumper():
                         inject.orig_jump_target_offset = inject.arg
 
+                new_injection = []
+                for inject in injection:
+                    if not isinstance(inject.arg, int) or inject.arg < 2**8:
+                        new_injection.append(inject)
+                        continue
+                    else:
+                        arg = inject.arg
+                        inserted_extended_args = 0
+                        arg >>= 8
+                        while arg > 0:
+                            if inserted_extended_args >= 3:
+                                # we can only insert 3! so abort!
+                                raise SyntaxError("Too many extended_args wanting to be inserted; possibly too many co_names (more than 2^32).")
+                            new_injection.append(Instruction.ExtendedArgs())
+                            inserted_extended_args += 1
+                            arg >>= 8
+                        new_injection.append(inject)
+
+                injection = new_injection
+
                 new_instructions.extend(injection)
 
             new_instructions.append(instruction)

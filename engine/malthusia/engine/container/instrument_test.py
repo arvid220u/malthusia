@@ -1,8 +1,45 @@
 import pytest
 import dis
 import re
+from io import StringIO
+from contextlib import redirect_stdout
 
 from .instrument import Instrument
+
+def test_replace_builtins():
+    s = """
+l = [1,2,3]
+x = l.index(2)
+print(x)
+y = type(x)
+print(y)
+class X:
+ def __init__(self):
+  self.xxx = [0, 123]
+ def index(self, ix):
+  if ix == self.xxx:
+   return "happy!!"
+  else:
+   print(self.xxx.index(123))
+   return "sad:(("
+xx = X()
+print(type(xx))
+print(type(xx).__module__=="builtins")
+xxx = xx.index(123)
+print(xxx)
+"""
+    c = compile(s, "source", "exec")
+    ci = Instrument.instrument(c, replace_builtins=True, instrument=False)
+    new_builtins = {"__builtins__": {"__instrumented_index": lambda x, y: 32, "type": type, "__safe_type__": type, "print": print, "__build_class__": __build_class__, "__name__": "DANGEROUS_main"}}
+    f = StringIO()
+    with redirect_stdout(f):
+        exec(c, new_builtins)
+    correct_val = f.getvalue()
+    f2 = StringIO()
+    with redirect_stdout(f2):
+        exec(ci, new_builtins)
+    our_val = f2.getvalue().replace("32", "1")
+    assert correct_val == our_val
 
 def test_instrument():
     source = """x = 3
