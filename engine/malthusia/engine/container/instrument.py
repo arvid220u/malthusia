@@ -1,6 +1,7 @@
 import dis
 import math
 import logging
+import collections.abc
 import os
 import sys
 from types import CodeType
@@ -166,6 +167,16 @@ class Instrument:
         :param bytecode: a code object, the bytecode submitted by the player
         :return: a new code object that has been injected with our bytecode counter
         """
+
+        for const in bytecode.co_consts:
+            if isinstance(const, collections.abc.Sized):
+                if len(const) > 1000:
+                    raise SyntaxError(f"Literal with more than 1000 characters. Names, literals and constants can consist of at most 1000 characters. Cause: {const}")
+
+        for name in bytecode.co_names:
+            if isinstance(name, collections.abc.Sized):
+                if len(name) > 1000:
+                    raise SyntaxError(f"Name with more than 1000 characters. Names, literals and constants can consist of at most 1000 characters. Cause: {name}")
 
         # IMPL NOTE: only original instructions can be jump targets!!!!!
 
