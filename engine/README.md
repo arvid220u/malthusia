@@ -105,3 +105,5 @@ Instead of modifying the bytecode directly, one could use `sys.settrace`. This m
 
 An initial version of the engine pauses code upon reaching the bytecode limit. This requires thread manipulation, and is sometimes confusing (the turn function is no longer atomic, so you have to think about interleaving issues), but makes for a nicer interface if you want to perform a one-time expensive computation.
 Another option is to raise an exception when the limit is reached, and always restarting computation from the beginning of the turn function.
+
+There is a problem with the pausing version of the code and `multinstrument` calls: the code will pause after running out of bytecode when the cost is subtracted, but it will then proceed to execute the costly code after that the `multinstrument` was supposed to cover.
