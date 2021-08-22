@@ -322,6 +322,12 @@ class Builtins:
     def append(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
 
+    def sort(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda l: len(l) * math.log(len(l)+3))
+
+    def reverse(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda l: len(l))
+
     #
     # module methods
     #
