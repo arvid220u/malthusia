@@ -106,6 +106,8 @@ class Builtins:
     # type methods
     #
 
+    # string
+
     def capitalize(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
 
@@ -231,6 +233,61 @@ class Builtins:
 
     def encode(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    # set
+
+    def isdisjoint(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def issubset(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def issuperset(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def union(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def intersection(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def difference(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def symmetric_difference(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def copy(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: len(a))
+
+    def update(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def intersection_update(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def difference_update(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def symmetric_difference_update(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: math.log(len(a)+1) + math.log(len(b)+1))
+
+    def add(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: math.log(len(a)+1))
+
+    def remove(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: math.log(len(a)+1))
+
+    def discard(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: math.log(len(a)+1))
+
+    def pop(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: math.log(len(a)+1))
+
+    def clear(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: math.log(len(a)+1))
+
+    # list
 
     def append(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
