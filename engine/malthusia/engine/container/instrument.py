@@ -18,6 +18,7 @@ class Instrument:
 
     @staticmethod
     def replace_builtin_methods(instructions, names, consts):
+        # this is generally done in a better way by overriding _getattr_. so most often we probably don't want to use this
 
         added_names = ["__safe_type__", "__module__"]
         added_consts = ["builtins"]
@@ -160,7 +161,7 @@ class Instrument:
 
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
-    def instrument(bytecode, replace_builtins=True, instrument=True, instrument_binary_multiply=True):
+    def instrument(bytecode, replace_builtins=False, instrument=True, instrument_binary_multiply=True):
         """
         The primary method of instrumenting code, which involves injecting a bytecode counter between every instruction to be executed
 

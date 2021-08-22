@@ -197,7 +197,10 @@ class RobotRunner:
         self.debug = debug
 
     def print_call(self, *args, **kwargs):
-        raise SyntaxError("print() is not allowed. Please use log() instead.")
+        class P:
+            def _call_print(self):
+                raise SyntaxError("print() is not allowed. Please use log() instead.")
+        return P
 
     def create_getattr_call(self, old_getattr):
         def get_full_name(t):
