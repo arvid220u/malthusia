@@ -390,7 +390,7 @@ class RobotRunner:
     def init_robot(self):
         try:
             exec(self.code['bot'], self.globals, self.locals)
-            self.globals.update(self.locals)
+            self.globals.update(self.locals) # TODO: why is this here?
             self.initialized = True
         except:
             self.error_method(traceback.format_exc(limit=5))
