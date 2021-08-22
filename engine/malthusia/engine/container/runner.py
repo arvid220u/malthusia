@@ -137,7 +137,7 @@ class RobotRunner:
         self.globals['__builtins__']['__multinstrument__'] = self.multinstrument_call
         self.globals['__builtins__']['__import__'] = self.import_call
         self.globals['__builtins__']['_getitem_'] = self.getitem_call
-        self.globals['__builtins__']['_write_'] = lambda obj: self.write_call(obj, set(game_methods.values()).union(set(builtin_classes_instrumented.values())))
+        self.globals['__builtins__']['_write_'] = lambda obj: self.write_call(obj, set(game_methods.values()))
         self.globals['__builtins__']['_getiter_'] = lambda i: i
         self.globals['__builtins__']['_inplacevar_'] = self.inplacevar_call
         self.globals['__builtins__']['_unpack_sequence_'] = Guards.guarded_unpack_sequence
