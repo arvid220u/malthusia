@@ -100,9 +100,66 @@ class Instrument:
 
         return instructions, names, consts
 
+    @staticmethod
+    def instrument_binary_multiply(instructions, names, consts):
+
+        added_names = ["__instrument_binary_multiply__"]
+
+        name_indices = {}
+        for i, name in enumerate(names):
+            for added_name in added_names:
+                if name == added_name:
+                    name_indices[name] = i
+        for added_name in added_names:
+            if added_name not in name_indices:
+                name_indices[added_name] = len(names)
+                names = names + (added_name, )
+
+        # find every binary_multiply and insert a nice little injection
+        new_instructions = []
+        for instruction in instructions:
+            if dis.opname[instruction.opcode] == "BINARY_MULTIPLY":
+
+                injection = [
+                    dis.Instruction(opcode=dis.opmap["DUP_TOP_TWO"], opname="DUP_TOP_TWO", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["LOAD_GLOBAL"], opname='LOAD_GLOBAL', arg=name_indices["__instrument_binary_multiply__"], argval='__instrument_binary_multiply__', argrepr='__instrument_binary_multiply__', offset=None, starts_line=None, is_jump_target=False),
+                    dis.Instruction(opcode=dis.opmap["ROT_THREE"], opname='ROT_THREE', arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=False),
+                    dis.Instruction(opcode=dis.opmap["CALL_FUNCTION"], opname='CALL_FUNCTION', arg=2, argval=2, argrepr="", offset=None, starts_line=None, is_jump_target=False),
+                    dis.Instruction(opcode=dis.opmap["POP_TOP"], opname='POP_TOP', arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=False)
+                ]
+                injection = [Instruction(inst, original=False) for inst in injection]
+
+                new_injection = []
+                for inject in injection:
+                    if not isinstance(inject.arg, int) or inject.arg < 2**8:
+                        new_injection.append(inject)
+                        continue
+                    else:
+                        arg = inject.arg
+                        inserted_extended_args = 0
+                        arg >>= 8
+                        while arg > 0:
+                            if inserted_extended_args >= 3:
+                                # we can only insert 3! so abort!
+                                raise SyntaxError("Too many extended_args wanting to be inserted; possibly too many co_names (more than 2^32).")
+                            new_injection.append(Instruction.ExtendedArgs())
+                            inserted_extended_args += 1
+                            arg >>= 8
+                        new_injection.append(inject)
+
+                injection = new_injection
+
+                new_instructions.extend(injection)
+
+            new_instructions.append(instruction)
+
+        instructions = new_instructions
+
+        return instructions, names, consts
+
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
-    def instrument(bytecode, replace_builtins=True, instrument=True):
+    def instrument(bytecode, replace_builtins=True, instrument=True, instrument_binary_multiply=True):
         """
         The primary method of instrumenting code, which involves injecting a bytecode counter between every instruction to be executed
 
@@ -143,6 +200,9 @@ class Instrument:
         # replace builtins
         if replace_builtins:
             instructions, new_names, new_consts = Instrument.replace_builtin_methods(instructions, new_names, new_consts)
+
+        if instrument_binary_multiply:
+            instructions, new_names, new_consts = Instrument.instrument_binary_multiply(instructions, new_names, new_consts)
 
 
         # Make sure our code can locate the __instrument__ call

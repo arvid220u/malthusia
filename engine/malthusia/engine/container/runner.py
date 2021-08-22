@@ -1,6 +1,7 @@
 import sys
 import traceback
 import logging
+import collections.abc
 
 from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, Guards
 from threading import Thread, Event
@@ -127,11 +128,12 @@ class RobotRunner:
         not_instrumented_builtins = {"None", "False", "True"}
         builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset", "str", "bool", "slice", "type"}
         builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_"}
-        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__"}
+        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__"}
         disallowed_builtins = ["id"]
 
         self.globals['__builtins__']['__metaclass__'] = type
         self.globals['__builtins__']['__instrument__'] = self.instrument_call
+        self.globals['__builtins__']['__instrument_binary_multiply__'] = self.instrument_binary_multiply_call
         self.globals['__builtins__']['__multinstrument__'] = self.multinstrument_call
         self.globals['__builtins__']['__import__'] = self.import_call
         self.globals['__builtins__']['_getitem_'] = self.getitem_call
@@ -301,6 +303,18 @@ class RobotRunner:
     def instrument_call(self):
         self.bytecode -= 1
         self.check_bytecode()
+
+    def instrument_binary_multiply_call(self, a, b):
+        if isinstance(a, collections.abc.Sized) and isinstance(b, int):
+            self.multinstrument_call(len(a) * b)
+        elif isinstance(b, collections.abc.Sized) and isinstance(a, int):
+            self.multinstrument_call(len(b) * a)
+        elif isinstance(a, int) and isinstance(b, int):
+            self.multinstrument_call(int(math.log(abs(a)+1) + math.log(abs(b)+1)))
+        elif isinstance(b, collections.abc.Sized) and isinstance(a, collections.abc.Sized):
+            self.multinstrument_call(len(a)+len(b))
+        else:
+            logger.debug("not sure how to instrument binary multiply of non-integer/non-sequence")
 
     def multinstrument_call(self, n):
         if n < 0:
