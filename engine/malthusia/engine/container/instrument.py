@@ -9,6 +9,19 @@ from .instruction import Instruction
 
 logger = logging.getLogger(__name__)
 
+# from https://stackoverflow.com/a/1409284
+def actual_kwargs():
+    """
+    Decorator that provides the wrapped function with an attribute 'actual_kwargs'
+    containing just those keyword arguments actually passed in to the function.
+    """
+    def decorator(function):
+        def inner(*args, **kwargs):
+            inner.actual_kwargs = kwargs
+            return function(*args, **kwargs)
+        return inner
+    return decorator
+
 class Instrument:
     """
     A class for instrumenting specific methods (e.g. sort) as well as instrumenting competitor code
@@ -19,10 +32,9 @@ class Instrument:
         self.runner = runner
 
     @staticmethod
-    def reraise_dangerous_exceptions(instructions, names, consts):
+    def reraise_dangerous_exceptions(instructions, names, consts, stacksize):
 
-        added_names = Instrument.DANGEROUS_EXCEPTIONS + ["__e"]
-        added_consts = ["None"]
+        added_names = Instrument.DANGEROUS_EXCEPTIONS
 
         name_indices = {}
         for i, name in enumerate(names):
@@ -33,18 +45,11 @@ class Instrument:
             if added_name not in name_indices:
                 name_indices[added_name] = len(names)
                 names = names + (added_name, )
-        const_indices = {}
-        for i, const in enumerate(consts):
-            for added_const in added_consts:
-                if const == added_const:
-                    const_indices[const] = i
-        for added_const in added_consts:
-            if added_const not in const_indices:
-                const_indices[added_const] = len(consts)
-                consts = consts + (added_const, )
 
+        logger.debug(f"reraise dangerous exceptions, names: {names}")
 
-        # ALSO DO THIS FOR MATH ??
+        extra_stacksize = 0
+
         # find every load_method and insert a nice little injection
         new_instructions = []
         insert_before_orig_offset = {}
@@ -66,6 +71,8 @@ class Instrument:
                 new_except_loc = instruction.orig_jump_target_offset - 0.7
 
                 instruction.orig_jump_target_offset = new_except_loc
+
+                extra_stacksize = max(extra_stacksize, 1 + len(Instrument.DANGEROUS_EXCEPTIONS))
 
                 injection = [
                     dis.Instruction(opcode=dis.opmap["DUP_TOP"], opname="DUP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
@@ -118,12 +125,15 @@ class Instrument:
             new_instructions.append(instruction)
 
         instructions = new_instructions
+        stacksize += extra_stacksize
 
-        return instructions, names, consts
+        return instructions, names, consts, stacksize
 
     @staticmethod
-    def replace_builtin_methods(instructions, names, consts):
+    def replace_builtin_methods(instructions, names, consts, stacksize):
         # this is generally done in a better way by overriding _getattr_. so most often we probably don't want to use this
+
+        extra_stacksize = 0
 
         added_names = ["__safe_type__", "__module__"]
         added_consts = ["builtins"]
@@ -160,6 +170,8 @@ class Instrument:
 
                 method_name = names[instruction.arg]
                 instrumented_method_name = "__instrumented_" + method_name
+
+                extra_stacksize = max(extra_stacksize, 3)
 
                 injection = [
                     dis.Instruction(opcode=dis.opmap["DUP_TOP"], opname="DUP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
@@ -204,11 +216,14 @@ class Instrument:
             new_instructions.append(instruction)
 
         instructions = new_instructions
+        stacksize += extra_stacksize
 
-        return instructions, names, consts
+        return instructions, names, consts, stacksize
 
     @staticmethod
-    def instrument_binary_multiply(instructions, names, consts):
+    def instrument_binary_multiply(instructions, names, consts, stacksize):
+
+        extra_stacksize = 0
 
         added_names = ["__instrument_binary_multiply__"]
 
@@ -226,6 +241,8 @@ class Instrument:
         new_instructions = []
         for instruction in instructions:
             if dis.opname[instruction.opcode] == "BINARY_MULTIPLY":
+
+                extra_stacksize = max(extra_stacksize, 3)
 
                 injection = [
                     dis.Instruction(opcode=dis.opmap["DUP_TOP_TWO"], opname="DUP_TOP_TWO", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
@@ -261,11 +278,13 @@ class Instrument:
             new_instructions.append(instruction)
 
         instructions = new_instructions
+        stacksize += extra_stacksize
 
-        return instructions, names, consts
+        return instructions, names, consts, stacksize
 
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
+    @actual_kwargs()
     def instrument(bytecode, replace_builtins=False, instrument=True, instrument_binary_multiply=True, reraise_dangerous_exceptions=True):
         """
         The primary method of instrumenting code, which involves injecting a bytecode counter between every instruction to be executed
@@ -290,7 +309,7 @@ class Instrument:
         new_consts = []
         for i, constant in enumerate(bytecode.co_consts):
             if type(constant) == CodeType:
-                new_consts.append(Instrument.instrument(constant, replace_builtins=replace_builtins, instrument=instrument))
+                new_consts.append(Instrument.instrument(constant, **Instrument.instrument.actual_kwargs))
             else:
                 new_consts.append(constant)
         new_consts = tuple(new_consts)
@@ -313,16 +332,17 @@ class Instrument:
         # original setup done
 
         new_names = tuple(bytecode.co_names)
+        new_stacksize = bytecode.co_stacksize
 
         # replace builtins
         if replace_builtins:
-            instructions, new_names, new_consts = Instrument.replace_builtin_methods(instructions, new_names, new_consts)
+            instructions, new_names, new_consts, new_stacksize = Instrument.replace_builtin_methods(instructions, new_names, new_consts, new_stacksize)
 
         if instrument_binary_multiply:
-            instructions, new_names, new_consts = Instrument.instrument_binary_multiply(instructions, new_names, new_consts)
+            instructions, new_names, new_consts, new_stacksize = Instrument.instrument_binary_multiply(instructions, new_names, new_consts, new_stacksize)
 
         if reraise_dangerous_exceptions:
-            instructions, new_names, new_consts = Instrument.reraise_dangerous_exceptions(instructions, new_names, new_consts)
+            instructions, new_names, new_consts, new_stacksize = Instrument.reraise_dangerous_exceptions(instructions, new_names, new_consts, new_stacksize)
 
         # Make sure our code can locate the __instrument__ call
         function_name_index = len(new_names)  # we will be inserting our __instrument__ call at the end of co_names
@@ -351,6 +371,8 @@ class Instrument:
 
         if not instrument:
             injection = []
+        else:
+            new_stacksize += 1
 
         # We then inject the injection before every call, except for those following an EXTENDED_ARGS.
         new_instructions = []
@@ -540,7 +562,7 @@ class Instrument:
         new_code = bytes(sum(byte_array, []))
 
         # return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
-        final_code = Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
+        final_code = Instrument.build_code(bytecode, new_stacksize, new_code, new_names, new_consts, new_lnotab)
 
         logger.debug("FINAL CODE:")
         logger.debug(dis.Bytecode(final_code).dis())
@@ -549,14 +571,14 @@ class Instrument:
         return final_code
 
     @staticmethod
-    def build_code(old_code, new_code, new_names, new_consts, new_lnotab):
+    def build_code(old_code, new_stacksize, new_code, new_names, new_consts, new_lnotab):
         """Helper method to build a new code object because Python does not allow us to modify existing code objects"""
         if sys.version_info >= (3, 8):
             return CodeType(old_code.co_argcount,
                             old_code.co_posonlyargcount,
                             old_code.co_kwonlyargcount,
                             old_code.co_nlocals,
-                            old_code.co_stacksize,
+                            new_stacksize,
                             old_code.co_flags,
                             new_code,
                             new_consts,
@@ -572,7 +594,7 @@ class Instrument:
             return CodeType(old_code.co_argcount,
                             old_code.co_kwonlyargcount,
                             old_code.co_nlocals,
-                            old_code.co_stacksize,
+                            new_stacksize,
                             old_code.co_flags,
                             new_code,
                             new_consts,

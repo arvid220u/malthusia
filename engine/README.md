@@ -96,3 +96,12 @@ The bytecodes operate on a stack machine. That is, most operations are performed
 The bytecode instrumentation is not perfect, because many of the bytecodes are not constant time. For example, `BUILD_STRING(i)` concatenates `i` strings, which should probably cost `i` bytecodes and not 1 bytecode. But meh, seems relatively benign.
 
 Note: `is_jump_target` is never set on the extended args, but always on the root instruction. However, the jump target is the extended args instruction.
+
+### `sys.settrace` idea
+
+Instead of modifying the bytecode directly, one could use `sys.settrace`. This might lead to a simpler and more robust implementation. See https://gist.github.com/j-mao/1d833c66fc72c773c28c6ecf272e4d02 for a proof of concept.
+
+### Pause vs Error on Bytecode Limit
+
+An initial version of the engine pauses code upon reaching the bytecode limit. This requires thread manipulation, and is sometimes confusing (the turn function is no longer atomic, so you have to think about interleaving issues), but makes for a nicer interface if you want to perform a one-time expensive computation.
+Another option is to raise an exception when the limit is reached, and always restarting computation from the beginning of the turn function.

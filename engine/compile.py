@@ -8,6 +8,7 @@ from malthusia.engine.container.instrument import Instrument
 import importlib
 import marshal
 import dis
+from types import CodeType
 import struct
 
 # inspired by https://gist.github.com/stecman/3751ac494795164efa82a683130cabe5
@@ -51,14 +52,49 @@ def code_to_bytecode(code, mtime=0, source_size=0):
 
     return data
 
-def main(filename: str, replace_builtins: bool = True, instrument: bool = True, instrument_binary_multiply: bool = True, reraise_dangerous_exceptions: bool = True):
+def main(filename: str, replace_builtins: bool = True, instrument: bool = True, instrument_binary_multiply: bool = True, reraise_dangerous_exceptions: bool = True, write_dis: bool = True):
     with open(filename, "r") as f:
         source = f.read()
     compiled_source = compile(source, filename, "exec")
     instrumented = Instrument.instrument(compiled_source, replace_builtins=replace_builtins, instrument=instrument, instrument_binary_multiply=instrument_binary_multiply, reraise_dangerous_exceptions=reraise_dangerous_exceptions)
     with open(filename + "c", 'wb') as fc:
+        fc.write(code_to_bytecode(instrumented))
+    typer.echo(f"wrote binary instrumented code to {filename}c")
+    with open(filename + "c.original", 'wb') as fc:
         fc.write(code_to_bytecode(compiled_source))
+    typer.echo(f"wrote binary original code to {filename}c.original")
+    if write_dis:
+        with open(filename + "h", 'w') as fc:
+            dis.dis(instrumented, file=fc)
+        typer.echo(f"wrote human readable instrumented code to {filename}h")
+        with open(filename + "h.original", 'w') as fc:
+            dis.dis(compiled_source, file=fc)
+        typer.echo(f"wrote human readable original code to {filename}h.original")
 
+    print_codetype(instrumented)
+    for const in instrumented.co_consts:
+        if type(const) == CodeType:
+            print_codetype(const)
+        
+
+def print_codetype(instrumented):
+    print(instrumented.co_argcount)
+    print(instrumented.co_posonlyargcount)
+    print(instrumented.co_kwonlyargcount)
+    print(instrumented.co_nlocals)
+    print(instrumented.co_stacksize)
+    print(instrumented.co_flags)
+    print(instrumented.co_code)
+    print(instrumented.co_consts)
+    print(instrumented.co_names)
+    print(instrumented.co_varnames)
+    print(instrumented.co_filename)
+    print(instrumented.co_name)
+    print(instrumented.co_firstlineno)
+    print(instrumented.co_lnotab)
+    print(instrumented.co_freevars)
+    print(instrumented.co_cellvars)
 
 if __name__ == "__main__":
     typer.run(main)
+

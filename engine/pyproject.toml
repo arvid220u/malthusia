@@ -12,6 +12,7 @@ pytest = "^6.2.4"
 
 [tool.poetry.dev-dependencies]
 typer = "^0.3.2"
+uncompyle6 = "^3.7.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
