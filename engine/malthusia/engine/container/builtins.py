@@ -106,8 +106,128 @@ class Builtins:
     # type methods
     #
 
+    def capitalize(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def casefold(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def center(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, w: max(len(s), w))
+
+    def ljust(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, w: max(len(s), w))
+
+    def count(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def endswith(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, suffix: len(suffix))
+
+    def expandtabs(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def find(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isdecimal(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isdigit(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isascii(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isidentifier(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def islower(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isnumeric(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isprintable(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isspace(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def istitle(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def isupper(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def join(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, seq: len(seq) + len(s)/8)
+
     def index(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def lower(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def lstrip(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def partition(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq)/4)
+
+    def removeprefix(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, prefix: len(prefix))
+
+    def removesuffix(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, suffix: len(suffix))
+
+    def replace(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def rfind(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def rindex(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def rjust(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def rpartition(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def rsplit(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def rstrip(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def split(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def splitlines(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def startswith(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, p: len(p))
+
+    def strip(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def swapcase(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def title(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def translate(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def upper(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda s: len(s))
+
+    def zfill(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda s, w: w + len(s))
 
     def encode(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
@@ -118,6 +238,8 @@ class Builtins:
     #
     # module methods
     #
+
+    # math
 
     def factorial(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda n: n*n*math.log(abs(n)+1))
