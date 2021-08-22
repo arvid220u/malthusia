@@ -128,7 +128,7 @@ class RobotRunner:
         not_instrumented_builtins = {"None", "False", "True"}
         builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset", "str", "bool", "slice", "type"}
         builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_"}
-        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__"}
+        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__", "_print_"}
         disallowed_builtins = ["id"]
 
         self.globals['__builtins__']['__metaclass__'] = type
@@ -144,6 +144,7 @@ class RobotRunner:
         self.globals['__builtins__']['_iter_unpack_sequence_'] = Guards.guarded_iter_unpack_sequence
         self.globals['__builtins__']['_getattr_'] = self.create_getattr_call(self.globals['__builtins__']['_getattr_'])
 
+        self.globals['__builtins__']['_print_'] = self.print_call
         self.globals['__builtins__']['log'] = log_method
         self.globals['__builtins__']['type'] = type
         self.globals['__builtins__']['__safe_type__'] = type
@@ -194,6 +195,9 @@ class RobotRunner:
         self.initialized = False
 
         self.debug = debug
+
+    def print_call(self, *args, **kwargs):
+        raise SyntaxError("print() is not allowed. Please use log() instead.")
 
     def create_getattr_call(self, old_getattr):
         def get_full_name(t):
