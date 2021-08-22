@@ -248,8 +248,7 @@ class RobotRunner:
 
         return new_getattr
 
-    @staticmethod
-    def inplacevar_call(op, x, y):
+    def inplacevar_call(self, op, x, y):
         if not isinstance(op, str):
             raise SyntaxError('Unsupported in place op.')
 
@@ -260,6 +259,7 @@ class RobotRunner:
             return x - y
 
         elif op == '*=':
+            self.instrument_binary_multiply_call(x, y)
             return x * y
 
         elif op == '/=':
