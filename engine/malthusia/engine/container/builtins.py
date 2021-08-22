@@ -287,6 +287,36 @@ class Builtins:
     def clear(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda a: math.log(len(a)+1))
 
+    # dict
+
+    def copy(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda a: len(a))
+
+    def copy(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def items(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def keys(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def values(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def reversed(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def pop(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 4)
+
+    def popitem(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def update(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a, b: len(b) + math.log(len(a)+1))
+
+
     # list
 
     def append(self, real_implementation):
