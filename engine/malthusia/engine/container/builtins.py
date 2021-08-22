@@ -121,3 +121,54 @@ class Builtins:
 
     def factorial(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda n: n*n*math.log(abs(n)+1))
+
+    def comb(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda n, k: n)
+
+    def fsum(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def gcd(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a,b: math.log(abs(a) + 1) + math.log(abs(b) + 1))
+
+    def isqrt(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def lcm(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda a,b: math.log(abs(a) + 1) + math.log(abs(b) + 1))
+
+    def perm(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda n, k: n)
+
+    def prod(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
+    def exp(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def expm1(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def log(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def log1p(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def log2(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def log10(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def sqrt(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda n: math.log(abs(n)+1)/4)
+
+    def pow(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda b, e: math.log(abs(e)+1)*1 + math.log(abs(b)+1)/4)
+
+    def dist(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda x, y: len(x) + len(y))
+
+    def hypot(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
