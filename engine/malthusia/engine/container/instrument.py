@@ -13,8 +13,113 @@ class Instrument:
     """
     A class for instrumenting specific methods (e.g. sort) as well as instrumenting competitor code
     """
+    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError"]
+
     def __init__(self, runner):
         self.runner = runner
+
+    @staticmethod
+    def reraise_dangerous_exceptions(instructions, names, consts):
+
+        added_names = Instrument.DANGEROUS_EXCEPTIONS + ["__e"]
+        added_consts = ["None"]
+
+        name_indices = {}
+        for i, name in enumerate(names):
+            for added_name in added_names:
+                if name == added_name:
+                    name_indices[name] = i
+        for added_name in added_names:
+            if added_name not in name_indices:
+                name_indices[added_name] = len(names)
+                names = names + (added_name, )
+        const_indices = {}
+        for i, const in enumerate(consts):
+            for added_const in added_consts:
+                if const == added_const:
+                    const_indices[const] = i
+        for added_const in added_consts:
+            if added_const not in const_indices:
+                const_indices[added_const] = len(consts)
+                consts = consts + (added_const, )
+
+
+        # ALSO DO THIS FOR MATH ??
+        # find every load_method and insert a nice little injection
+        new_instructions = []
+        insert_before_orig_offset = {}
+        for instruction_index, instruction in enumerate(instructions):
+
+            if instruction.orig_offset in insert_before_orig_offset:
+                new_instructions.extend(insert_before_orig_offset[instruction.orig_offset])
+                del insert_before_orig_offset[instruction.orig_offset]
+
+            if dis.opname[instruction.opcode] == "SETUP_FINALLY":
+
+                previous_except_loc = instruction.orig_jump_target_offset
+                end_of_except_loc = -1
+                for instr_index, instr in enumerate(instructions[instruction_index:]):
+                    if instr.orig_offset == previous_except_loc:
+                        end_of_except_loc = instructions[instruction_index+instr_index-1].orig_jump_target_offset
+                assert(end_of_except_loc != -1)
+
+                new_except_loc = instruction.orig_jump_target_offset - 0.7
+
+                instruction.orig_jump_target_offset = new_except_loc
+
+                injection = [
+                    dis.Instruction(opcode=dis.opmap["DUP_TOP"], opname="DUP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                ]
+                for dangerous_exception in Instrument.DANGEROUS_EXCEPTIONS:
+                    injection.append(
+                        dis.Instruction(opcode=dis.opmap["LOAD_GLOBAL"], opname="LOAD_GLOBAL", arg=name_indices[dangerous_exception], argval=dangerous_exception, argrepr=dangerous_exception, offset=None, starts_line=None, is_jump_target=None),
+                    )
+                injection.extend([
+                    dis.Instruction(opcode=dis.opmap["BUILD_TUPLE"], opname="BUILD_TUPLE", arg=len(Instrument.DANGEROUS_EXCEPTIONS), argval=len(Instrument.DANGEROUS_EXCEPTIONS), argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["COMPARE_OP"], opname="COMPARE_OP", arg=10, argval="exception match", argrepr="exception match", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["POP_JUMP_IF_FALSE"], opname="POP_JUMP_IF_FALSE", arg=previous_except_loc, argval=previous_except_loc, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["RAISE_VARARGS"], opname="RAISE_VARARGS", arg=0, argval=0, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["POP_EXCEPT"], opname="POP_EXCEPT", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
+                    dis.Instruction(opcode=dis.opmap["JUMP_FORWARD"], opname="JUMP_FORWARD", arg=end_of_except_loc, argval=end_of_except_loc, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                ])
+                injection = [Instruction(inst, original=False) for inst in injection]
+                for inject in injection:
+                    if inject.is_jumper():
+                        inject.orig_jump_target_offset = inject.arg
+
+                injection[0].orig_offset = new_except_loc
+                injection[0].has_orig_offset = True
+
+                new_injection = []
+                for inject in injection:
+                    if not isinstance(inject.arg, int) or inject.arg < 2**8:
+                        new_injection.append(inject)
+                        continue
+                    else:
+                        arg = inject.arg
+                        inserted_extended_args = 0
+                        arg >>= 8
+                        while arg > 0:
+                            if inserted_extended_args >= 3:
+                                # we can only insert 3! so abort!
+                                raise SyntaxError("Too many extended_args wanting to be inserted; possibly too many co_names (more than 2^32).")
+                            new_injection.append(Instruction.ExtendedArgs())
+                            inserted_extended_args += 1
+                            arg >>= 8
+                        new_injection.append(inject)
+
+                injection = new_injection
+
+                insert_before_orig_offset[previous_except_loc] = injection
+
+            new_instructions.append(instruction)
+
+        instructions = new_instructions
+
+        return instructions, names, consts
 
     @staticmethod
     def replace_builtin_methods(instructions, names, consts):
@@ -161,7 +266,7 @@ class Instrument:
 
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
-    def instrument(bytecode, replace_builtins=False, instrument=True, instrument_binary_multiply=True):
+    def instrument(bytecode, replace_builtins=False, instrument=True, instrument_binary_multiply=True, reraise_dangerous_exceptions=True):
         """
         The primary method of instrumenting code, which involves injecting a bytecode counter between every instruction to be executed
 
@@ -216,6 +321,8 @@ class Instrument:
         if instrument_binary_multiply:
             instructions, new_names, new_consts = Instrument.instrument_binary_multiply(instructions, new_names, new_consts)
 
+        if reraise_dangerous_exceptions:
+            instructions, new_names, new_consts = Instrument.reraise_dangerous_exceptions(instructions, new_names, new_consts)
 
         # Make sure our code can locate the __instrument__ call
         function_name_index = len(new_names)  # we will be inserting our __instrument__ call at the end of co_names
@@ -280,7 +387,7 @@ class Instrument:
             # calculate map from orig_offset to cur_offset
             orig_to_curr_offset = {}
             for i, instruction in enumerate(instructions):
-                if not instruction.original:
+                if not instruction.has_orig_offset:
                     continue
                 cur_offset = instruction.offset
                 for prev_instr in instructions[max(i-3,0):i][::-1]:
@@ -290,7 +397,9 @@ class Instrument:
                     else:
                         break
                 # we want to make sure to instrument the jumped-to instruction too, so that we cannot get infinite self loops
-                orig_to_curr_offset[instruction.orig_offset] = cur_offset - len(injection)*2
+                if instruction.original:
+                    cur_offset -= len(injection)*2
+                orig_to_curr_offset[instruction.orig_offset] = cur_offset
 
             # now transform each jumper's argument to point to the cur offset instead of the orig offset
             new_instructions = []
@@ -335,7 +444,7 @@ class Instrument:
         # calculate map from orig_offset to cur_offset
         orig_to_curr_offset = {}
         for i, instruction in enumerate(instructions):
-            if not instruction.original:
+            if not instruction.has_orig_offset:
                 continue
             cur_offset = instruction.offset
             for prev_instr in instructions[max(i-3,0):i][::-1]:
@@ -345,7 +454,9 @@ class Instrument:
                 else:
                     break
             # we want to make sure to instrument the jumped-to instruction too, so that we cannot get infinite self loops
-            orig_to_curr_offset[instruction.orig_offset] = cur_offset - len(injection)*2
+            if instruction.original:
+                cur_offset -= len(injection)*2
+            orig_to_curr_offset[instruction.orig_offset] = cur_offset
 
         logger.debug(f"near-final instructions: {instructions}")
 

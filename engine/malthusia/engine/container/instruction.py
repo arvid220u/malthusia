@@ -6,6 +6,7 @@ class Instruction(SimpleNamespace):
         vals = {a: b for a,b in zip(dis.Instruction._fields, instruction)}
         vals["orig_offset"] = vals["offset"]
         vals["original"] = original
+        vals["has_orig_offset"] = original
         assert((original and vals["offset"] is not None) or (not original and vals["offset"] is None))
         vals["orig_jump_target_offset"] = None
         super().__init__(**vals)

@@ -78,6 +78,8 @@ class RobotRunner:
             '__name__': 'DANGEROUS_main'
         }
 
+        self.globals['__builtins__']['RecursionError'] = RecursionError
+
         builtin_errors = {"ArithmeticError",
                           "AssertionError",
                           'AttributeError',
@@ -105,6 +107,7 @@ class RobotRunner:
                           'OSError',
                           'OverflowError',
                           'PendingDeprecationWarning',
+                          'RecursionError',
                           'ReferenceError',
                           'RuntimeError',
                           'RuntimeWarning',
