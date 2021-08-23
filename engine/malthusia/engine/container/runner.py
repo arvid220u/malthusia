@@ -350,6 +350,8 @@ class RobotRunner:
             exec(self.code['bot'], self.globals, self.locals)
             self.globals.update(self.locals) # we need to update the globals with the locals in the module space, because later we are just calling the turn function
             self.initialized = True
+        except KeyboardInterrupt:
+            raise
         except:
             self.error_method(traceback.format_exc(limit=5))
 
@@ -357,6 +359,8 @@ class RobotRunner:
         if 'turn' in self.locals and isinstance(self.locals['turn'], type(lambda: 1)):
             try:
                 exec(self.locals['turn'].__code__, self.globals, self.locals)
+            except KeyboardInterrupt:
+                raise
             except:
                 self.error_method(traceback.format_exc(limit=5))
         else:
