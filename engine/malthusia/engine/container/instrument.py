@@ -26,7 +26,7 @@ class Instrument:
     """
     A class for instrumenting specific methods (e.g. sort) as well as instrumenting competitor code
     """
-    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit"]
+    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit", "OutOfBytecode"]
 
     def __init__(self, runner):
         self.runner = runner
