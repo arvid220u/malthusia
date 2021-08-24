@@ -26,7 +26,6 @@ class RobotRunner:
                 raise error_type(f"arguments are invalid; argument {i} has type {type(arg)} which is user-defined and possibly dangerous")
 
     def __init__(self, code, game_methods, log_method, error_method, debug=False):
-        self.instrument = Instrument(self)
         self.builtins = Builtins(self)
         self.locals = {}
         self.globals = {
@@ -357,6 +356,7 @@ class RobotRunner:
             self.globals.update(self.locals) # we need to update the globals with the locals in the module space, because later we are just calling the turn function
             self.initialized = True
         except KeyboardInterrupt:
+            # TODO: also handle other dangerous exceptions and decide what to do with them
             raise
         except:
             self.error_method(traceback.format_exc(limit=5))
@@ -366,6 +366,7 @@ class RobotRunner:
             try:
                 exec(self.locals['turn'].__code__, self.globals, self.locals)
             except KeyboardInterrupt:
+                # TODO: also handle other dangerous exceptions and decide what to do with them
                 raise
             except:
                 self.error_method(traceback.format_exc(limit=5))
@@ -373,9 +374,6 @@ class RobotRunner:
             self.error_method('Couldn\'t find turn function.')
 
     def run(self):
-        # TODO: work like chess clock or just a constant number of bytecodes per turn?
-        # i like the chess clock approach. can then get similar to what we had before with a long unbroken computation
-        # also, can then save up for one turn where
         if self.CHESS_CLOCK_MECHANISM:
             self.bytecode = max(self.bytecode, 0) + self.EXTRA_BYTECODE
         else:

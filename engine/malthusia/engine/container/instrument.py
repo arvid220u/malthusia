@@ -28,9 +28,6 @@ class Instrument:
     """
     DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit", "OutOfBytecode"]
 
-    def __init__(self, runner):
-        self.runner = runner
-
     @staticmethod
     def reraise_dangerous_exceptions(instructions, names, consts, stacksize):
 
