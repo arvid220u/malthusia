@@ -140,6 +140,12 @@ class RobotRunner:
                 logger.error(builtin)
                 assert(False)
 
+        # make the dangerous exceptions start with _ so that they cannot be raised by user code
+        for excp in Instrument.DANGEROUS_EXCEPTIONS:
+            assert excp in self.globals['__builtins__']
+            self.globals['__builtins__']['_' + excp] = self.globals['__builtins__'][excp]
+            del self.globals['__builtins__'][excp]
+
         logger.debug("BUILTINS")
         logger.debug(self.globals['__builtins__'])
         logger.debug("END BUILTINS")
