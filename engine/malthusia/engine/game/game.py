@@ -55,13 +55,16 @@ class Game:
                     robot = self.queue[i]
                     robot.turn()
 
-                    if not robot.runner.initialized:
+                    if not robot.alive:
                         self.delete_robot(i)
                     self.check_over()
 
             if self.running:
                 for robot in self.lords:
                     robot.turn()
+                    if not robot.alive:
+                        # TODO: what happens if HQ dies?
+                        raise NotImplementedError("HQ DIES")
 
                 self.lords.reverse()  # the HQ's will alternate spawn order
                 self.board_states.append([row[:] for row in self.board])
@@ -151,6 +154,7 @@ class Game:
             'Team': Team,
             'get_board_size': lambda : self.get_board_size(),
             'get_bytecode' : lambda : robot.runner.bytecode,
+            'get_last_memory_usage' : lambda : robot.runner.last_memory_usage,
             'get_team': lambda : self.get_team(robot),
             'get_type': lambda: self.get_type(robot),
         }
