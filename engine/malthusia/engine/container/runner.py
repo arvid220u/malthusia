@@ -385,7 +385,7 @@ class RobotRunner:
         self.check_memory()
 
     def check_memory(self):
-        mem_usage = memory.bytes_usage(self.globals)
+        mem_usage = memory.bytes_usage({k: v for k, v in self.globals.items() if k != "__builtins__"})
         if mem_usage > self.MEMORY_LIMIT:
             raise RobotRunnerError(f"Out of memory! Robot uses {mem_usage} bytes, which is more than the allowed {self.MEMORY_LIMIT} bytes.")
         self.last_memory_usage = mem_usage
