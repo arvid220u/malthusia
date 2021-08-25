@@ -154,6 +154,7 @@ class Game:
             'Team': Team,
             'get_board_size': lambda : self.get_board_size(),
             'get_bytecode' : lambda : robot.runner.bytecode,
+            'get_last_memory_usage' : lambda : robot.runner.last_memory_usage,
             'get_team': lambda : self.get_team(robot),
             'get_type': lambda: self.get_type(robot),
         }

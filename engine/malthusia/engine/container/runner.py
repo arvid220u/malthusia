@@ -7,6 +7,7 @@ from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, 
 from time import sleep
 from .instrument import Instrument
 from .builtins import *
+from . import memory
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ class RobotRunnerError(Exception):
     pass
 
 class RobotRunner:
+    # TODO: make this into parameters passed to initialization, let the game expose some/all of them in a constants file
     STARTING_BYTECODE = 20_000
     EXTRA_BYTECODE = 20_000
     MAX_BYTECODE = 1_000_000
@@ -31,7 +33,6 @@ class RobotRunner:
 
     def __init__(self, code, game_methods, log_method, error_method, debug=False):
         self.builtins = Builtins(self)
-        self.locals = {}
         self.globals = {
             '__builtins__': dict(i for dct in [safe_builtins, limited_builtins] for i in dct.items()),
             '__name__': 'DANGEROUS_main'
@@ -162,6 +163,7 @@ class RobotRunner:
         self.imports = {}
 
         self.bytecode = self.STARTING_BYTECODE
+        self.last_memory_usage = 0
 
         self.initialized = False
 
@@ -356,8 +358,9 @@ class RobotRunner:
 
     def init_robot(self):
         try:
-            exec(self.code['bot'], self.globals, self.locals)
-            self.globals.update(self.locals) # we need to update the globals with the locals in the module space, because later we are just calling the turn function
+            locals = {}
+            exec(self.code['bot'], self.globals, locals)
+            self.globals.update(locals) # we need to update the globals with the locals in the module space, because later we are just calling the turn function
             self.initialized = True
         except KeyboardInterrupt:
             # TODO: also handle other dangerous exceptions and decide what to do with them
@@ -366,11 +369,12 @@ class RobotRunner:
             self.error_method(traceback.format_exc(limit=5))
         if not self.initialized:
             raise RobotRunnerError("Failed to initialize robot.")
+        self.check_memory()
 
     def do_turn(self):
-        if 'turn' in self.locals and isinstance(self.locals['turn'], type(lambda: 1)):
+        if 'turn' in self.globals and isinstance(self.globals['turn'], type(lambda: 1)):
             try:
-                exec(self.locals['turn'].__code__, self.globals, self.locals)
+                exec(self.globals['turn'].__code__, self.globals, {})
             except KeyboardInterrupt:
                 # TODO: also handle other dangerous exceptions and decide what to do with them
                 raise
@@ -378,6 +382,14 @@ class RobotRunner:
                 self.error_method(traceback.format_exc(limit=5))
         else:
             self.error_method('Couldn\'t find turn function.')
+        self.check_memory()
+
+    def check_memory(self):
+        mem_usage = memory.bytes_usage(self.globals)
+        if mem_usage > self.MEMORY_LIMIT:
+            raise RobotRunnerError(f"Out of memory! Robot uses {mem_usage} bytes, which is more than the allowed {self.MEMORY_LIMIT} bytes.")
+        self.last_memory_usage = mem_usage
+
 
     def run(self):
         """
