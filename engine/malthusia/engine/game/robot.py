@@ -78,7 +78,7 @@ class Robot:
             self.runner.run()
         except RobotRunnerError as e:
             self.fatal_error(str(e))
-            self.alive = False
+            self.kill()
 
     def __str__(self):
         team = 'B' if self.team.value else 'W'
