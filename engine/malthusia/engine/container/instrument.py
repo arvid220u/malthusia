@@ -100,7 +100,7 @@ class Instrument:
 
                 new_injection = []
                 for inject in injection:
-                    if not isinstance(inject.arg, int) or inject.arg < 2**8:
+                    if not isinstance(inject.arg, int) or inject.arg < 2**8 or inject.is_jumper():
                         new_injection.append(inject)
                         continue
                     else:
@@ -191,7 +191,7 @@ class Instrument:
 
                 new_injection = []
                 for inject in injection:
-                    if not isinstance(inject.arg, int) or inject.arg < 2**8:
+                    if not isinstance(inject.arg, int) or inject.arg < 2**8 or inject.is_jumper():
                         new_injection.append(inject)
                         continue
                     else:
@@ -253,7 +253,7 @@ class Instrument:
 
                 new_injection = []
                 for inject in injection:
-                    if not isinstance(inject.arg, int) or inject.arg < 2**8:
+                    if not isinstance(inject.arg, int) or inject.arg < 2**8 or inject.is_jumper():
                         new_injection.append(inject)
                         continue
                     else:
