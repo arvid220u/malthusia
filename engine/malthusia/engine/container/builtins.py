@@ -101,6 +101,9 @@ class Builtins:
     def _getitem_(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
 
+    def sum(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
+
 
     #
     # type methods

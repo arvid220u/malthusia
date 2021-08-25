@@ -26,15 +26,12 @@ class Instrument:
     """
     A class for instrumenting specific methods (e.g. sort) as well as instrumenting competitor code
     """
-    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit"]
-
-    def __init__(self, runner):
-        self.runner = runner
+    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit", "OutOfBytecode"]
 
     @staticmethod
     def reraise_dangerous_exceptions(instructions, names, consts, stacksize):
 
-        added_names = Instrument.DANGEROUS_EXCEPTIONS
+        added_names = ["_" + x for x in Instrument.DANGEROUS_EXCEPTIONS]
 
         name_indices = {}
         for i, name in enumerate(names):
@@ -78,6 +75,7 @@ class Instrument:
                     dis.Instruction(opcode=dis.opmap["DUP_TOP"], opname="DUP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                 ]
                 for dangerous_exception in Instrument.DANGEROUS_EXCEPTIONS:
+                    dangerous_exception = "_" + dangerous_exception
                     injection.append(
                         dis.Instruction(opcode=dis.opmap["LOAD_GLOBAL"], opname="LOAD_GLOBAL", arg=name_indices[dangerous_exception], argval=dangerous_exception, argrepr=dangerous_exception, offset=None, starts_line=None, is_jump_target=None),
                     )
