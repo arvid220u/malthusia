@@ -55,13 +55,16 @@ class Game:
                     robot = self.queue[i]
                     robot.turn()
 
-                    if not robot.runner.initialized:
+                    if not robot.alive:
                         self.delete_robot(i)
                     self.check_over()
 
             if self.running:
                 for robot in self.lords:
                     robot.turn()
+                    if not robot.alive:
+                        # TODO: what happens if HQ dies?
+                        raise NotImplementedError("HQ DIES")
 
                 self.lords.reverse()  # the HQ's will alternate spawn order
                 self.board_states.append([row[:] for row in self.board])

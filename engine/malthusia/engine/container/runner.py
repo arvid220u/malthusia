@@ -13,11 +13,15 @@ logger = logging.getLogger(__name__)
 class OutOfBytecode(Exception):
     pass
 
+class RobotRunnerError(Exception):
+    pass
+
 class RobotRunner:
     STARTING_BYTECODE = 20_000
     EXTRA_BYTECODE = 20_000
     MAX_BYTECODE = 1_000_000
     CHESS_CLOCK_MECHANISM = True
+    MEMORY_LIMIT = 2**20 # (1 MB)
 
     @staticmethod
     def validate_arguments(*args, error_type):
@@ -360,6 +364,8 @@ class RobotRunner:
             raise
         except:
             self.error_method(traceback.format_exc(limit=5))
+        if not self.initialized:
+            raise RobotRunnerError("Failed to initialize robot.")
 
     def do_turn(self):
         if 'turn' in self.locals and isinstance(self.locals['turn'], type(lambda: 1)):
@@ -374,6 +380,10 @@ class RobotRunner:
             self.error_method('Couldn\'t find turn function.')
 
     def run(self):
+        """
+        Runs one turn of the robot, initializing it if needed.
+        :raises: RobotRunnerError if an error occurred from which the runner cannot recover (failed to initialize, out of memory)
+        """
         if self.CHESS_CLOCK_MECHANISM:
             self.bytecode = max(self.bytecode, 0) + self.EXTRA_BYTECODE
         else:
