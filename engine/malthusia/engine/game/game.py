@@ -151,6 +151,7 @@ class Game:
             'GameError': GameError,
             'RobotType': RobotType,
             'RobotError': RobotError,
+            'GameConstants': GameConstants,
             'Team': Team,
             'get_board_size': lambda : self.get_board_size(),
             'get_bytecode' : lambda : robot.runner.bytecode,

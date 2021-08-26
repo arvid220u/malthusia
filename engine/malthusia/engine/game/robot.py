@@ -1,6 +1,8 @@
 from ..container.runner import RobotRunner
+from ..container.runner import RobotRunnerConfig
 from ..container.runner import RobotRunnerError
 from .robottype import RobotType
+from .constants import GameConstants
 
 class Robot:
     STARTING_HEALTH = 1
@@ -23,7 +25,10 @@ class Robot:
         self.alive = False
 
     def animate(self, code, methods, debug=False):
-        self.runner = RobotRunner(code, methods, self.log, self.error, debug=debug)
+        config = RobotRunnerConfig(starting_bytecode=0, bytecode_per_turn=GameConstants.BYTECODE_PER_TURN,
+                                   max_bytecode=GameConstants.MAX_BYTECODE, chess_clock_mechanism=True,
+                                   memory_limit=GameConstants.MEMORY_LIMIT)
+        self.runner = RobotRunner(code, methods, self.log, self.error, config, debug=debug)
         self.debug = debug
         self.alive = True
 
