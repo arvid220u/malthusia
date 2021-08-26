@@ -62,12 +62,6 @@ class Instrument:
 
                 previous_except_loc = instruction.orig_jump_target_offset
                 assert (previous_except_loc is not None)
-                end_of_except_loc = -1
-                for instr_index, instr in enumerate(instructions[instruction_index:]):
-                    if instr.orig_offset == previous_except_loc:
-                        end_of_except_loc = instructions[instruction_index+instr_index-1].orig_jump_target_offset
-                assert(end_of_except_loc != -1)
-                assert(end_of_except_loc is not None)
 
                 new_except_loc = instruction.orig_jump_target_offset - 0.7
 
@@ -91,8 +85,8 @@ class Instrument:
                     dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["RAISE_VARARGS"], opname="RAISE_VARARGS", arg=0, argval=0, argrepr="", offset=None, starts_line=None, is_jump_target=None),
-                    dis.Instruction(opcode=dis.opmap["POP_EXCEPT"], opname="POP_EXCEPT", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
-                    dis.Instruction(opcode=dis.opmap["JUMP_FORWARD"], opname="JUMP_FORWARD", arg=end_of_except_loc, argval=end_of_except_loc, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    # the next operation should never be executed hopefully!!
+                    dis.Instruction(opcode=255, opname="NOT_A_LEGAL_OPERATION", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                 ])
                 injection = [Instruction(inst, original=False) for inst in injection]
                 for inject in injection:
@@ -320,7 +314,9 @@ class Instrument:
                 new_consts.append(constant)
         new_consts = tuple(new_consts)
 
+        logger.debug("BEGIN uninstrumented code:")
         logger.debug(dis.Bytecode(bytecode).dis())
+        logger.debug("END uninstrumented code")
 
         instructions = list(dis.get_instructions(bytecode))
         # convert every instruction into our own instruction format, which adds a couple of fields.
