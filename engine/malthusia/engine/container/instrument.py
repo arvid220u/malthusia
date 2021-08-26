@@ -51,6 +51,8 @@ class Instrument:
         new_instructions = []
         insert_before_orig_offset = {}
         for instruction_index, instruction in enumerate(instructions):
+            if not instruction.original:
+                continue
 
             if instruction.orig_offset in insert_before_orig_offset:
                 new_instructions.extend(insert_before_orig_offset[instruction.orig_offset])
@@ -59,11 +61,13 @@ class Instrument:
             if dis.opname[instruction.opcode] == "SETUP_FINALLY":
 
                 previous_except_loc = instruction.orig_jump_target_offset
+                assert (previous_except_loc is not None)
                 end_of_except_loc = -1
                 for instr_index, instr in enumerate(instructions[instruction_index:]):
                     if instr.orig_offset == previous_except_loc:
                         end_of_except_loc = instructions[instruction_index+instr_index-1].orig_jump_target_offset
                 assert(end_of_except_loc != -1)
+                assert(end_of_except_loc is not None)
 
                 new_except_loc = instruction.orig_jump_target_offset - 0.7
 
@@ -164,6 +168,8 @@ class Instrument:
         # find every load_method and insert a nice little injection
         new_instructions = []
         for instruction in instructions:
+            if not instruction.original:
+                continue
             if dis.opname[instruction.opcode] == "LOAD_METHOD":
 
                 method_name = names[instruction.arg]
@@ -238,6 +244,8 @@ class Instrument:
         # find every binary_multiply and insert a nice little injection
         new_instructions = []
         for instruction in instructions:
+            if not instruction.original:
+                continue
             if dis.opname[instruction.opcode] == "BINARY_MULTIPLY":
 
                 extra_stacksize = max(extra_stacksize, 3)
