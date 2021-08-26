@@ -264,11 +264,13 @@ class RobotRunner:
         if isinstance(obj, type(sys)):
             raise RuntimeError('Can\'t write to modules.')
 
-        elif isinstance(obj, type(lambda: 1)):
+        if isinstance(obj, type(lambda: 1)):
             raise RuntimeError('Can\'t write to functions.')
 
-        elif obj in disallowed_objs:
-            raise RuntimeError(f'Can\'t write to {obj}')
+        if isinstance(obj, collections.abc.Hashable):
+            # all internal disallowed objs must be hashable because in a set
+            if obj in disallowed_objs:
+                raise RuntimeError(f'Can\'t write to {obj}')
 
         return obj
 
