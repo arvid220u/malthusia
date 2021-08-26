@@ -17,13 +17,25 @@ class OutOfBytecode(Exception):
 class RobotRunnerError(Exception):
     pass
 
+class RobotRunnerConfig:
+
+    def __init__(self, starting_bytecode, bytecode_per_turn, max_bytecode, chess_clock_mechanism,
+                 memory_limit):
+        """
+        Create a RobotRunner configuration.
+        :param starting_bytecode: the amount of bytecode the robot starts with
+        :param bytecode_per_turn: bytecode added before every turn (including first; so first turn gets starting + this)
+        :param max_bytecode: the max bytecode allowed for a single turn. caps the accumulation in chess mode. be cautious about setting this too high, as memory is currently only checked inter-turns and not intra-turns
+        :param chess_clock_mechanism: if true, adds the last turn's unused bytecode to the next turn. otherwise does not.
+        :param memory_limit: the max number of bytes allowed for a bot to persist in between turns
+        """
+        self.starting_bytecode = starting_bytecode
+        self.bytecode_per_turn = bytecode_per_turn
+        self.max_bytecode = max_bytecode
+        self.chess_clock_mechanism = chess_clock_mechanism
+        self.memory_limit = memory_limit
+
 class RobotRunner:
-    # TODO: make this into parameters passed to initialization, let the game expose some/all of them in a constants file
-    STARTING_BYTECODE = 20_000
-    EXTRA_BYTECODE = 20_000
-    MAX_BYTECODE = 1_000_000
-    CHESS_CLOCK_MECHANISM = True
-    MEMORY_LIMIT = 2**20 # (1 MB)
 
     @staticmethod
     def validate_arguments(*args, error_type):
@@ -31,8 +43,9 @@ class RobotRunner:
             if "DANGEROUS" in type(arg).__module__:
                 raise error_type(f"arguments are invalid; argument {i} has type {type(arg)} which is user-defined and possibly dangerous")
 
-    def __init__(self, code, game_methods, log_method, error_method, debug=False):
+    def __init__(self, code, game_methods, log_method, error_method, config: RobotRunnerConfig, debug=False):
         self.builtins = Builtins(self)
+        self.config = config
         self.globals = {
             '__builtins__': dict(i for dct in [safe_builtins, limited_builtins] for i in dct.items()),
             '__name__': 'DANGEROUS_main'
@@ -162,7 +175,7 @@ class RobotRunner:
         self.code = code
         self.imports = {}
 
-        self.bytecode = self.STARTING_BYTECODE
+        self.bytecode = self.config.starting_bytecode
         self.last_memory_usage = 0
 
         self.initialized = False
@@ -388,8 +401,8 @@ class RobotRunner:
 
     def check_memory(self):
         mem_usage = memory.bytes_usage({k: v for k, v in self.globals.items() if k != "__builtins__"})
-        if mem_usage > self.MEMORY_LIMIT:
-            raise RobotRunnerError(f"Out of memory! Robot uses {mem_usage} bytes in round-persistent memory (e.g. globals), which is more than the allowed {self.MEMORY_LIMIT} bytes.")
+        if mem_usage > self.config.memory_limit:
+            raise RobotRunnerError(f"Out of memory! Robot uses {mem_usage} bytes in round-persistent memory (e.g. globals), which is more than the allowed {self.config.memory_limit} bytes.")
         self.last_memory_usage = mem_usage
 
 
@@ -398,11 +411,11 @@ class RobotRunner:
         Runs one turn of the robot, initializing it if needed.
         :raises: RobotRunnerError if an error occurred from which the runner cannot recover (failed to initialize, out of memory)
         """
-        if self.CHESS_CLOCK_MECHANISM:
-            self.bytecode = max(self.bytecode, 0) + self.EXTRA_BYTECODE
+        if self.config.chess_clock_mechanism:
+            self.bytecode = max(self.bytecode, 0) + self.config.bytecode_per_turn
         else:
-            self.bytecode = self.EXTRA_BYTECODE
-        self.bytecode = min(self.MAX_BYTECODE, self.bytecode)
+            self.bytecode = self.config.bytecode_per_turn
+        self.bytecode = min(self.config.max_bytecode, self.bytecode)
 
         if not self.initialized:
             self.init_robot()
