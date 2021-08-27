@@ -9,6 +9,11 @@
 # WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
 # FOR A PARTICULAR PURPOSE
 #
+#
+#
+# MODIFIED by Arvid Lunnemark, 2021-08-27. See Git history of https://github.com/arvid220u/malthusia
+# for details about the modifications.
+#
 ##############################################################################
 """
 transformer module:
@@ -834,8 +839,6 @@ class RestrictingNodeTransformer(ast.NodeTransformer):
     def visit_Call(self, node):
         """Checks calls with '*args' and '**kwargs'.
 
-        Note: The following happens only if '*args' or '**kwargs' is used.
-
         Transfroms 'foo(<all the possible ways of args>)' into
         _apply_(foo, <all the possible ways for args>)
 
@@ -853,31 +856,7 @@ class RestrictingNodeTransformer(ast.NodeTransformer):
             elif node.func.id == 'eval':
                 self.error(node, 'Eval calls are not allowed.')
 
-        needs_wrap = False
-
-        # In python2.7 till python3.4 '*args', '**kwargs' have dedicated
-        # attributes on the ast.Call node.
-        # In python 3.5 and greater this has changed due to the fact that
-        # multiple '*args' and '**kwargs' are possible.
-        # '*args' can be detected by 'ast.Starred' nodes.
-        # '**kwargs' can be deteced by 'keyword' nodes with 'arg=None'.
-
-        if IS_PY35_OR_GREATER:
-            for pos_arg in node.args:
-                if isinstance(pos_arg, ast.Starred):
-                    needs_wrap = True
-
-            for keyword_arg in node.keywords:
-                if keyword_arg.arg is None:
-                    needs_wrap = True
-        else:
-            if (node.starargs is not None) or (node.kwargs is not None):
-                needs_wrap = True
-
         node = self.node_contents_visit(node)
-
-        if not needs_wrap:
-            return node
 
         node.args.insert(0, node.func)
         node.func = ast.Name('_apply_', ast.Load())

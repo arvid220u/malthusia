@@ -390,3 +390,17 @@ class Builtins:
 
     def hypot(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
+
+
+    #
+    # type initialization methods
+    #
+
+    def str(self, real_implementation):
+        return self.generic_internal_cost_output(real_implementation, lambda s: len(s))
+
+    def range(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 3)
+
+    def list(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda seq: len(seq))
