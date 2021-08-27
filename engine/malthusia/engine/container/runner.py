@@ -3,7 +3,7 @@ import traceback
 import logging
 import collections.abc
 
-from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, Guards
+from ..restrictedpython import safe_builtins, Guards
 from time import sleep
 from .instrument import Instrument
 from .builtins import *
@@ -47,7 +47,7 @@ class RobotRunner:
         self.builtins = Builtins(self)
         self.config = config
         self.globals = {
-            '__builtins__': dict(i for dct in [safe_builtins, limited_builtins] for i in dct.items()),
+            '__builtins__': dict(i for dct in [safe_builtins] for i in dct.items()),
             '__name__': 'DANGEROUS_main'
         }
 
@@ -105,7 +105,7 @@ class RobotRunner:
         not_instrumented_builtins = {"None", "False", "True"}
         builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset", "str", "bool", "slice", "type"}
         builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_", "sum"}
-        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__", "_print_"}
+        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__", "_print_", "_apply_"}
         disallowed_builtins = ["id"]
 
         self.globals['__builtins__']['__metaclass__'] = type
@@ -120,6 +120,7 @@ class RobotRunner:
         self.globals['__builtins__']['_unpack_sequence_'] = Guards.guarded_unpack_sequence
         self.globals['__builtins__']['_iter_unpack_sequence_'] = Guards.guarded_iter_unpack_sequence
         self.globals['__builtins__']['_getattr_'] = self.create_getattr_call(self.globals['__builtins__']['_getattr_'])
+        self.globals['__builtins__']['_apply_'] = self.apply_call
 
         self.globals['__builtins__']['_print_'] = self.print_call
         self.globals['__builtins__']['log'] = log_method
@@ -127,6 +128,8 @@ class RobotRunner:
         self.globals['__builtins__']['sum'] = sum
         self.globals['__builtins__']['OutOfBytecode'] = OutOfBytecode
         self.globals['__builtins__']['range'] = range
+        self.globals['__builtins__']['list'] = list
+        self.globals['__builtins__']['tuple'] = tuple
         self.globals['__builtins__']['__safe_type__'] = type
         self.globals['__builtins__']['enumerate'] = enumerate
         self.globals['__builtins__']['set'] = set
@@ -310,6 +313,15 @@ class RobotRunner:
             self.multinstrument_call(len(a)+len(b))
         else:
             logger.debug("not sure how to instrument binary multiply of non-integer/non-sequence")
+
+    def apply_call(self, func, *args, **kwargs):
+        logger.debug(f"IN APPLY CALL for {func}")
+        if type(func) == type and func.__module__ == "builtins":
+            logger.debug(f"FOR BUILTIN TYPE: {func}")
+            instrumented_builtin = getattr(self.builtins, func.__name__)
+            return instrumented_builtin(func)(*args, **kwargs)
+        return func(*args, **kwargs)
+
 
     def multinstrument_call(self, n):
         if n < 0:

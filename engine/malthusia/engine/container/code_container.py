@@ -4,7 +4,7 @@ from os.path import isfile, join
 from .instrument import Instrument
 
 import marshal, pickle
-from RestrictedPython import compile_restricted
+from ..restrictedpython import compile_restricted
 
 
 class CodeContainer:

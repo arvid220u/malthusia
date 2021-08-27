@@ -19,6 +19,23 @@ class Builtins:
             return real_implementation(arg, *args, **kwargs)
         return internal
 
+    def generic_internal_cost_one_arg_optional(self, real_implementation, cost_fn):
+        def internal(*args, **kwargs):
+            if len(args) > 0:
+                cost = int(cost_fn(args[0]))
+            else:
+                cost = 1
+            self.runner.multinstrument_call(cost)
+            return real_implementation(*args, **kwargs)
+        return internal
+
+    def generic_internal_cost_args_and_kwargs(self, real_implementation, cost_fn):
+        def internal(*args, **kwargs):
+            cost = int(cost_fn(args, kwargs))
+            self.runner.multinstrument_call(cost)
+            return real_implementation(*args, **kwargs)
+        return internal
+
     def generic_internal_cost_two_args(self, real_implementation, cost_fn):
         def internal(arg1, arg2, *args, **kwargs):
             cost = int(cost_fn(arg1, arg2))
@@ -390,3 +407,54 @@ class Builtins:
 
     def hypot(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
+
+
+    #
+    # type initialization methods
+    #
+
+    def str(self, real_implementation):
+        return self.generic_internal_cost_output(real_implementation, lambda s: len(s))
+
+    def range(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 3)
+
+    def list(self, real_implementation):
+        return self.generic_internal_cost_one_arg_optional(real_implementation, lambda seq: len(seq))
+
+    def bytes(self, real_implementation):
+        def cost_fn(arg):
+            if isinstance(arg, int):
+                return arg
+            return len(arg)
+        return self.generic_internal_cost_one_arg_optional(real_implementation, cost_fn)
+
+    def complex(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 2)
+
+    def dict(self, real_implementation):
+        def cost_fn(args, kwargs):
+            cost = len(kwargs)
+            if len(args) > 0:
+                cost += len(args[0])
+            return cost
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, cost_fn)
+
+    def frozenset(self, real_implementation):
+        return self.generic_internal_cost_one_arg_optional(real_implementation, lambda seq: len(seq))
+
+    def int(self, real_implementation):
+        def cost_fn(arg):
+            if hasattr(arg, "__len__"):
+                return len(arg)
+            return 1
+        return self.generic_internal_cost_one_arg_optional(real_implementation, cost_fn)
+
+    def set(self, real_implementation):
+        return self.generic_internal_cost_one_arg_optional(real_implementation, lambda seq: len(seq))
+
+    def slice(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 2)
+
+    def tuple(self, real_implementation):
+        return self.generic_internal_cost_one_arg_optional(real_implementation, lambda seq: len(seq))
