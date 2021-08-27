@@ -3,7 +3,7 @@ import traceback
 import logging
 import collections.abc
 
-from RestrictedPython import safe_builtins, limited_builtins, utility_builtins, Guards
+from ..restrictedpython import safe_builtins, limited_builtins, utility_builtins, Guards
 from time import sleep
 from .instrument import Instrument
 from .builtins import *
