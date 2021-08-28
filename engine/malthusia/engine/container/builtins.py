@@ -2,9 +2,18 @@ import math
 from typing import Tuple, Optional, Literal, Iterable, Any
 
 class Builtins:
+    """
+    Builtins contains cost instrumentation of all builtin functions, methods and constructors.
+    Instead of re-implementing every builtin, we compute a cost based on the arguments (e.g. len * log(len) for sorted)
+    and subtract it before calling the original implementation.
+    """
 
     def __init__(self, runner):
         self.runner = runner
+
+    #
+    # cost helpers
+    #
 
     def generic_internal_cost_const(self, real_implementation, cost):
         def internal(*args, **kwargs):

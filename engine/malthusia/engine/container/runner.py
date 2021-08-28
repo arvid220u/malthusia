@@ -2,12 +2,15 @@ import sys
 import traceback
 import logging
 import collections.abc
+import re
+import os
 
 from ..restrictedpython import safe_builtins, Guards
 from time import sleep
 from .instrument import Instrument
 from .builtins import *
 from . import memory
+from .code_container import CodeContainer
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +39,66 @@ class RobotRunnerConfig:
         self.memory_limit = memory_limit
 
 class RobotRunner:
+    """
+    RobotRunner is initialized with a code container, and is responsible for running the instrumented code.
+    It injects the builtins that are necessary and allowed, and modifies some of them to include instrumentation.
+    __init__(), run() and kill() are the primary methods.
+    """
+
+    NOT_INSTRUMENTED_BUILTINS= {"None", "False", "True"}
+    BUILTIN_CLASSES = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset", "str", "bool", "slice", "type"}
+    BUILTIN_FUNCTIONS= {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_", "sum"}
+    BUILTIN_INSTRUMENTATION_ARTIFACTS= {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__", "_print_", "_apply_"}
+    DISALLOWED_BUILTINS= ["id"]
+    BUILTIN_ERRORS = {"ArithmeticError",
+                      "AssertionError",
+                      'AttributeError',
+                      'BaseException',
+                      'BufferError',
+                      'BytesWarning',
+                      'DeprecationWarning',
+                      'EOFError',
+                      'EnvironmentError',
+                      'Exception',
+                      'FloatingPointError',
+                      'FutureWarning',
+                      'GeneratorExit',
+                      'IOError',
+                      'ImportError',
+                      'ImportWarning',
+                      'IndentationError',
+                      'IndexError',
+                      'KeyError',
+                      'KeyboardInterrupt',
+                      'LookupError',
+                      'MemoryError',
+                      'NameError',
+                      'NotImplementedError',
+                      'OSError',
+                      'OverflowError',
+                      'PendingDeprecationWarning',
+                      'RecursionError',
+                      'ReferenceError',
+                      'RuntimeError',
+                      'RuntimeWarning',
+                      'StopIteration',
+                      'SyntaxError',
+                      'SyntaxWarning',
+                      'SystemError',
+                      'SystemExit',
+                      'TabError',
+                      'TypeError',
+                      'UnboundLocalError',
+                      'UnicodeDecodeError',
+                      'UnicodeEncodeError',
+                      'UnicodeError',
+                      'UnicodeTranslateError',
+                      'UnicodeWarning',
+                      'UserWarning',
+                      'ValueError',
+                      'Warning',
+                      'ZeroDivisionError',
+                      'OutOfBytecode'}
 
     @staticmethod
     def validate_arguments(*args, error_type):
@@ -43,71 +106,15 @@ class RobotRunner:
             if "DANGEROUS" in type(arg).__module__:
                 raise error_type(f"arguments are invalid; argument {i} has type {type(arg)} which is user-defined and possibly dangerous")
 
-    def __init__(self, code, game_methods, log_method, error_method, config: RobotRunnerConfig, debug=False):
+    def __init__(self, code: CodeContainer, game_methods, log_method, error_method, config: RobotRunnerConfig, debug=False):
         self.builtins = Builtins(self)
         self.config = config
         self.globals = {
-            '__builtins__': dict(i for dct in [safe_builtins] for i in dct.items()),
+            '__builtins__': {k: v for k, v in safe_builtins.items()},
             '__name__': 'DANGEROUS_main'
         }
 
         self.globals['__builtins__']['RecursionError'] = RecursionError
-
-        builtin_errors = {"ArithmeticError",
-                          "AssertionError",
-                          'AttributeError',
-                          'BaseException',
-                          'BufferError',
-                          'BytesWarning',
-                          'DeprecationWarning',
-                          'EOFError',
-                          'EnvironmentError',
-                          'Exception',
-                          'FloatingPointError',
-                          'FutureWarning',
-                          'GeneratorExit',
-                          'IOError',
-                          'ImportError',
-                          'ImportWarning',
-                          'IndentationError',
-                          'IndexError',
-                          'KeyError',
-                          'KeyboardInterrupt',
-                          'LookupError',
-                          'MemoryError',
-                          'NameError',
-                          'NotImplementedError',
-                          'OSError',
-                          'OverflowError',
-                          'PendingDeprecationWarning',
-                          'RecursionError',
-                          'ReferenceError',
-                          'RuntimeError',
-                          'RuntimeWarning',
-                          'StopIteration',
-                          'SyntaxError',
-                          'SyntaxWarning',
-                          'SystemError',
-                          'SystemExit',
-                          'TabError',
-                          'TypeError',
-                          'UnboundLocalError',
-                          'UnicodeDecodeError',
-                          'UnicodeEncodeError',
-                          'UnicodeError',
-                          'UnicodeTranslateError',
-                          'UnicodeWarning',
-                          'UserWarning',
-                          'ValueError',
-                          'Warning',
-                          'ZeroDivisionError',
-                          'OutOfBytecode'}
-        not_instrumented_builtins = {"None", "False", "True"}
-        builtin_classes = {"bytes", "complex", "float", "int", "range", "tuple", "zip", "list", "set", "frozenset", "str", "bool", "slice", "type"}
-        builtin_functions = {"abs", "callable", "chr", "divmod", "hash", "hex", "isinstance", "issubclass", "len", "oct", "ord", "pow", "repr", "round", "sorted", "__build_class__", "setattr", "delattr", "_getattr_", "__import__", "_getitem_", "sum"}
-        builtin_instrumentation_artifacts = {"__metaclass__", "__instrument__", "__multinstrument__", "_write_", "_getiter_", "_inplacevar_", "_unpack_sequence_", "_iter_unpack_sequence_", "log", "enumerate", "__safe_type__", "__instrument_binary_multiply__", "_print_", "_apply_"}
-        disallowed_builtins = ["id"]
-
         self.globals['__builtins__']['__metaclass__'] = type
         self.globals['__builtins__']['__instrument__'] = self.instrument_call
         self.globals['__builtins__']['__instrument_binary_multiply__'] = self.instrument_binary_multiply_call
@@ -121,7 +128,6 @@ class RobotRunner:
         self.globals['__builtins__']['_iter_unpack_sequence_'] = Guards.guarded_iter_unpack_sequence
         self.globals['__builtins__']['_getattr_'] = self.create_getattr_call(self.globals['__builtins__']['_getattr_'])
         self.globals['__builtins__']['_apply_'] = self.apply_call
-
         self.globals['__builtins__']['_print_'] = self.print_call
         self.globals['__builtins__']['log'] = log_method
         self.globals['__builtins__']['type'] = type
@@ -136,24 +142,24 @@ class RobotRunner:
         self.globals['__builtins__']['frozenset'] = frozenset
         self.globals['__builtins__']['sorted'] = sorted
 
-        for builtin in disallowed_builtins:
+        for builtin in self.DISALLOWED_BUILTINS:
             del self.globals["__builtins__"][builtin]
 
         logger.debug("BUILTINS")
         for builtin in self.globals['__builtins__']:
             logger.debug(self.globals['__builtins__'][builtin])
-            if builtin in not_instrumented_builtins:
+            if builtin in self.NOT_INSTRUMENTED_BUILTINS:
                 continue
-            elif builtin in builtin_functions:
+            elif builtin in self.BUILTIN_FUNCTIONS:
                 instrumented_builtin = getattr(self.builtins, builtin)
                 self.globals['__builtins__'][builtin] = instrumented_builtin(self.globals['__builtins__'][builtin])
-            elif builtin in builtin_classes:
+            elif builtin in self.BUILTIN_CLASSES:
                 # class methods/functions are instrumented using _getattr_
                 continue
-            elif builtin in builtin_errors:
+            elif builtin in self.BUILTIN_ERRORS:
                 # errors are fine, there's nothing really resource intensive you can do with them
                 continue
-            elif builtin in builtin_instrumentation_artifacts:
+            elif builtin in self.BUILTIN_INSTRUMENTATION_ARTIFACTS:
                 continue
             else:
                 logger.error("builtin not expected:")
@@ -182,6 +188,7 @@ class RobotRunner:
         self.last_memory_usage = 0
 
         self.initialized = False
+        self.killed = False
 
         self.debug = debug
 
@@ -389,11 +396,12 @@ class RobotRunner:
             exec(self.code['bot'], self.globals, locals)
             self.globals.update(locals) # we need to update the globals with the locals in the module space, because later we are just calling the turn function
             self.initialized = True
-        except (KeyboardInterrupt, SystemError):
-            # TODO: also handle other dangerous exceptions and decide what to do with them
+        except (KeyboardInterrupt, SystemError, OSError, SystemExit):
             raise
+        except MemoryError:
+            raise RobotRunnerError(f"MemoryError caused!")
         except:
-            self.error_method(traceback.format_exc(limit=5))
+            self.report_error()
         if not self.initialized:
             raise RobotRunnerError("Failed to initialize robot.")
         self.check_memory()
@@ -402,14 +410,24 @@ class RobotRunner:
         if 'turn' in self.globals and isinstance(self.globals['turn'], type(lambda: 1)):
             try:
                 exec(self.globals['turn'].__code__, self.globals, {})
-            except (KeyboardInterrupt, SystemError):
-                # TODO: also handle other dangerous exceptions and decide what to do with them
+            except (KeyboardInterrupt, SystemError, OSError, SystemExit):
                 raise
+            except MemoryError:
+                raise RobotRunnerError(f"MemoryError caused!")
             except:
-                self.error_method(traceback.format_exc(limit=5))
+                self.report_error()
         else:
-            self.error_method('Couldn\'t find turn function.')
+            raise RobotRunnerError('Couldn\'t find turn() function.')
         self.check_memory()
+
+    def report_error(self):
+        error_str = traceback.format_exc(limit=1000)
+        this_file = os.path.abspath(__file__)
+        # remove apply_call, because it just clutters up everything while providing little of value
+        remove_apply = r'^\s*File "' + this_file.replace("/","\/") + r'", line \d+, in apply_call\s*\n\s*return func\(\*args, \*\*kwargs\)\s*\n'
+        modified_error_str = re.sub(remove_apply, "", error_str, flags=re.MULTILINE)
+        self.error_method(modified_error_str)
+
 
     def check_memory(self):
         mem_usage = memory.bytes_usage({k: v for k, v in self.globals.items() if k != "__builtins__"})
@@ -423,6 +441,9 @@ class RobotRunner:
         Runs one turn of the robot, initializing it if needed.
         :raises: RobotRunnerError if an error occurred from which the runner cannot recover (failed to initialize, out of memory)
         """
+        if self.killed:
+            raise RuntimeError("Cannot run a killed RobotRunner")
+
         if self.config.chess_clock_mechanism:
             self.bytecode = max(self.bytecode, 0) + self.config.bytecode_per_turn
         else:
@@ -435,4 +456,8 @@ class RobotRunner:
         self.do_turn()
 
     def kill(self):
-        pass
+        logger.debug(f"Killing RobotRunner {self}")
+        self.killed = True
+        # release some memory
+        del self.globals
+        del self.code

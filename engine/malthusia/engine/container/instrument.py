@@ -24,7 +24,9 @@ def actual_kwargs():
 
 class Instrument:
     """
-    A class for instrumenting specific methods (e.g. sort) as well as instrumenting competitor code
+    Instrument injects and modifies the bytecode of a code object, to:
+    (1) Call __instrument__ before each user instruction (which increments the bytecode counter)
+    (2) Modify the code in other ways, e.g. by reraising dangerous exceptions
     """
     DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit", "OutOfBytecode"]
 
@@ -285,9 +287,9 @@ class Instrument:
     # note: this does basically the same thing as sys.settrace. perhaps switch to sys.settrace?
     @staticmethod
     @actual_kwargs()
-    def instrument(bytecode, replace_builtins=False, instrument=True, instrument_binary_multiply=True, reraise_dangerous_exceptions=True):
+    def instrument(bytecode: CodeType, replace_builtins=False, instrument=True, instrument_binary_multiply=True, reraise_dangerous_exceptions=True) -> CodeType:
         """
-        The primary method of instrumenting code, which involves injecting a bytecode counter between every instruction to be executed
+        The primary method for instrumenting code, which involves injecting a bytecode counter between every instruction to be executed, among other things.
 
         :param bytecode: a code object, the bytecode submitted by the player
         :return: a new code object that has been injected with our bytecode counter

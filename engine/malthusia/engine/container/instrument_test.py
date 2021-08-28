@@ -41,52 +41,52 @@ print(xxx)
     our_val = f2.getvalue().replace("32", "1")
     assert correct_val == our_val
 
-def test_instrument():
+def test_instrument_simple():
     source = """x = 3
 y = 4
 z = x + y"""
     code = compile(source, "test", "exec")
     instrumented_code = Instrument.instrument(code, replace_builtins=False)
     disassembly = dis.Bytecode(instrumented_code).dis()
-    exp_disassembly = """  1           0 LOAD_GLOBAL              3 (__instrument__)
+    exp_disassembly = """  1           0 LOAD_GLOBAL             11 (__instrument__)
               2 CALL_FUNCTION            0
               4 POP_TOP
               6 LOAD_CONST               0 (3)
-              8 LOAD_GLOBAL              3 (__instrument__)
+              8 LOAD_GLOBAL             11 (__instrument__)
              10 CALL_FUNCTION            0
              12 POP_TOP
              14 STORE_NAME               0 (x)
 
-  2          16 LOAD_GLOBAL              3 (__instrument__)
+  2          16 LOAD_GLOBAL             11 (__instrument__)
              18 CALL_FUNCTION            0
              20 POP_TOP
              22 LOAD_CONST               1 (4)
-             24 LOAD_GLOBAL              3 (__instrument__)
+             24 LOAD_GLOBAL             11 (__instrument__)
              26 CALL_FUNCTION            0
              28 POP_TOP
              30 STORE_NAME               1 (y)
 
-  3          32 LOAD_GLOBAL              3 (__instrument__)
+  3          32 LOAD_GLOBAL             11 (__instrument__)
              34 CALL_FUNCTION            0
              36 POP_TOP
              38 LOAD_NAME                0 (x)
-             40 LOAD_GLOBAL              3 (__instrument__)
+             40 LOAD_GLOBAL             11 (__instrument__)
              42 CALL_FUNCTION            0
              44 POP_TOP
              46 LOAD_NAME                1 (y)
-             48 LOAD_GLOBAL              3 (__instrument__)
+             48 LOAD_GLOBAL             11 (__instrument__)
              50 CALL_FUNCTION            0
              52 POP_TOP
              54 BINARY_ADD
-             56 LOAD_GLOBAL              3 (__instrument__)
+             56 LOAD_GLOBAL             11 (__instrument__)
              58 CALL_FUNCTION            0
              60 POP_TOP
              62 STORE_NAME               2 (z)
-             64 LOAD_GLOBAL              3 (__instrument__)
+             64 LOAD_GLOBAL             11 (__instrument__)
              66 CALL_FUNCTION            0
              68 POP_TOP
              70 LOAD_CONST               2 (None)
-             72 LOAD_GLOBAL              3 (__instrument__)
+             72 LOAD_GLOBAL             11 (__instrument__)
              74 CALL_FUNCTION            0
              76 POP_TOP
              78 RETURN_VALUE
@@ -212,196 +212,196 @@ def turn():
     code = compile(source, "source", "exec")
     instrumented_code = Instrument.instrument(code, replace_builtins=False)
     disassembly = dis.Bytecode(instrumented_code).dis()
-    exp_disassembly = """  2           0 LOAD_GLOBAL             11 (__instrument__)
+    exp_disassembly = """  2           0 LOAD_GLOBAL             19 (__instrument__)
               2 CALL_FUNCTION            0
               4 POP_TOP
               6 LOAD_CONST               0 ((None, 0, 'BuiltinImporter', 'os', 'env'))
-              8 LOAD_GLOBAL             11 (__instrument__)
+              8 LOAD_GLOBAL             19 (__instrument__)
              10 CALL_FUNCTION            0
              12 POP_TOP
              14 STORE_NAME               0 (payload_consts)
 
-  3          16 LOAD_GLOBAL             11 (__instrument__)
+  3          16 LOAD_GLOBAL             19 (__instrument__)
              18 CALL_FUNCTION            0
              20 POP_TOP
              22 LOAD_CONST               1 (('get_board_size', '__closure__', 'cell_contents', '__class__', '__bases__', '__subclasses__', '__name__', 'load_module', 'system'))
-             24 LOAD_GLOBAL             11 (__instrument__)
+             24 LOAD_GLOBAL             19 (__instrument__)
              26 CALL_FUNCTION            0
              28 POP_TOP
              30 STORE_NAME               1 (payload_names)
 
-  4          32 LOAD_GLOBAL             11 (__instrument__)
+  4          32 LOAD_GLOBAL             19 (__instrument__)
              34 CALL_FUNCTION            0
              36 POP_TOP
              38 LOAD_CONST               2 (('subs', 'Importer', 'sub', 'imp'))
-             40 LOAD_GLOBAL             11 (__instrument__)
+             40 LOAD_GLOBAL             19 (__instrument__)
              42 CALL_FUNCTION            0
              44 POP_TOP
              46 STORE_NAME               2 (payload_varnames)
 
-  5          48 LOAD_GLOBAL             11 (__instrument__)
+  5          48 LOAD_GLOBAL             19 (__instrument__)
              50 CALL_FUNCTION            0
              52 POP_TOP
              54 LOAD_CONST               3 (b't\\x00j\\x01d\\x01\\x19\\x00j\\x02j\\x03j\\x04d\\x01\\x19\\x00\\xa0\\x05\\xa1\\x00}\\x00d\\x00}\\x01x\\x1c|\\x00D\\x00]\\x14}\\x02|\\x02j\\x06d\\x02k\\x02r"|\\x02}\\x01P\\x00q"W\\x00|\\x01\\x83\\x00}\\x03|\\x03\\xa0\\x07d\\x03\\xa1\\x01\\xa0\\x08d\\x04\\xa1\\x01\\x01\\x00d\\x00S\\x00')
-             56 LOAD_GLOBAL             11 (__instrument__)
+             56 LOAD_GLOBAL             19 (__instrument__)
              58 CALL_FUNCTION            0
              60 POP_TOP
              62 STORE_NAME               3 (payload)
 
- 15          64 LOAD_GLOBAL             11 (__instrument__)
+ 15          64 LOAD_GLOBAL             19 (__instrument__)
              66 CALL_FUNCTION            0
              68 POP_TOP
              70 LOAD_NAME                3 (payload)
 
- 16          72 LOAD_GLOBAL             11 (__instrument__)
+ 16          72 LOAD_GLOBAL             19 (__instrument__)
              74 CALL_FUNCTION            0
              76 POP_TOP
              78 LOAD_NAME                0 (payload_consts)
 
- 17          80 LOAD_GLOBAL             11 (__instrument__)
+ 17          80 LOAD_GLOBAL             19 (__instrument__)
              82 CALL_FUNCTION            0
              84 POP_TOP
              86 LOAD_NAME                1 (payload_names)
 
- 18          88 LOAD_GLOBAL             11 (__instrument__)
+ 18          88 LOAD_GLOBAL             19 (__instrument__)
              90 CALL_FUNCTION            0
              92 POP_TOP
              94 LOAD_NAME                2 (payload_varnames)
 
- 19          96 LOAD_GLOBAL             11 (__instrument__)
+ 19          96 LOAD_GLOBAL             19 (__instrument__)
              98 CALL_FUNCTION            0
             100 POP_TOP
             102 LOAD_CONST               4 (())
 
- 20         104 LOAD_GLOBAL             11 (__instrument__)
+ 20         104 LOAD_GLOBAL             19 (__instrument__)
             106 CALL_FUNCTION            0
             108 POP_TOP
             110 LOAD_CONST               4 (())
 
- 21         112 LOAD_GLOBAL             11 (__instrument__)
+ 21         112 LOAD_GLOBAL             19 (__instrument__)
             114 CALL_FUNCTION            0
             116 POP_TOP
             118 LOAD_CONST               5 ('<dummy>')
 
- 22         120 LOAD_GLOBAL             11 (__instrument__)
+ 22         120 LOAD_GLOBAL             19 (__instrument__)
             122 CALL_FUNCTION            0
             124 POP_TOP
             126 LOAD_CONST               6 ('evil_code')
 
- 23         128 LOAD_GLOBAL             11 (__instrument__)
+ 23         128 LOAD_GLOBAL             19 (__instrument__)
             130 CALL_FUNCTION            0
             132 POP_TOP
             134 LOAD_NAME                4 (str)
-            136 LOAD_GLOBAL             11 (__instrument__)
+            136 LOAD_GLOBAL             19 (__instrument__)
             138 CALL_FUNCTION            0
             140 POP_TOP
             142 LOAD_NAME                5 (len)
-            144 LOAD_GLOBAL             11 (__instrument__)
+            144 LOAD_GLOBAL             19 (__instrument__)
             146 CALL_FUNCTION            0
             148 POP_TOP
             150 LOAD_NAME                3 (payload)
-            152 LOAD_GLOBAL             11 (__instrument__)
+            152 LOAD_GLOBAL             19 (__instrument__)
             154 CALL_FUNCTION            0
             156 POP_TOP
             158 CALL_FUNCTION            1
-            160 LOAD_GLOBAL             11 (__instrument__)
+            160 LOAD_GLOBAL             19 (__instrument__)
             162 CALL_FUNCTION            0
             164 POP_TOP
             166 CALL_FUNCTION            1
-            168 LOAD_GLOBAL             11 (__instrument__)
+            168 LOAD_GLOBAL             19 (__instrument__)
             170 CALL_FUNCTION            0
             172 POP_TOP
             174 LOAD_METHOD              6 (encode)
-            176 LOAD_GLOBAL             11 (__instrument__)
+            176 LOAD_GLOBAL             19 (__instrument__)
             178 CALL_FUNCTION            0
             180 POP_TOP
             182 LOAD_CONST               7 ('utf-8')
-            184 LOAD_GLOBAL             11 (__instrument__)
+            184 LOAD_GLOBAL             19 (__instrument__)
             186 CALL_FUNCTION            0
             188 POP_TOP
             190 CALL_METHOD              1
-            192 LOAD_GLOBAL             11 (__instrument__)
+            192 LOAD_GLOBAL             19 (__instrument__)
             194 CALL_FUNCTION            0
             196 POP_TOP
             198 LOAD_CONST               8 (b'\\x00')
-            200 LOAD_GLOBAL             11 (__instrument__)
+            200 LOAD_GLOBAL             19 (__instrument__)
             202 CALL_FUNCTION            0
             204 POP_TOP
             206 BINARY_ADD
 
- 24         208 LOAD_GLOBAL             11 (__instrument__)
+ 24         208 LOAD_GLOBAL             19 (__instrument__)
             210 CALL_FUNCTION            0
             212 POP_TOP
             214 BUILD_LIST               0
 
- 14         216 LOAD_GLOBAL             11 (__instrument__)
+ 14         216 LOAD_GLOBAL             19 (__instrument__)
             218 CALL_FUNCTION            0
             220 POP_TOP
             222 LOAD_CONST               9 (('code', 'consts', 'names', 'varnames', 'freevars', 'cellvars', 'filename', 'name', 'lnotab', 'weakreflist'))
-            224 LOAD_GLOBAL             11 (__instrument__)
+            224 LOAD_GLOBAL             19 (__instrument__)
             226 CALL_FUNCTION            0
             228 POP_TOP
             230 BUILD_CONST_KEY_MAP     10
-            232 LOAD_GLOBAL             11 (__instrument__)
+            232 LOAD_GLOBAL             19 (__instrument__)
             234 CALL_FUNCTION            0
             236 POP_TOP
             238 STORE_NAME               7 (evil_struct)
 
- 26         240 LOAD_GLOBAL             11 (__instrument__)
+ 26         240 LOAD_GLOBAL             19 (__instrument__)
             242 CALL_FUNCTION            0
             244 POP_TOP
             246 LOAD_CONST              10 (<code object make_payload at 0x10ea58390, file "source", line 26>)
-            248 LOAD_GLOBAL             11 (__instrument__)
+            248 LOAD_GLOBAL             19 (__instrument__)
             250 CALL_FUNCTION            0
             252 POP_TOP
             254 LOAD_CONST              11 ('make_payload')
-            256 LOAD_GLOBAL             11 (__instrument__)
+            256 LOAD_GLOBAL             19 (__instrument__)
             258 CALL_FUNCTION            0
             260 POP_TOP
             262 MAKE_FUNCTION            0
-            264 LOAD_GLOBAL             11 (__instrument__)
+            264 LOAD_GLOBAL             19 (__instrument__)
             266 CALL_FUNCTION            0
             268 POP_TOP
             270 STORE_NAME               8 (make_payload)
 
- 90         272 LOAD_GLOBAL             11 (__instrument__)
+ 90         272 LOAD_GLOBAL             19 (__instrument__)
             274 CALL_FUNCTION            0
             276 POP_TOP
             278 LOAD_CONST              12 (<code object call_code at 0x10ea31b70, file "source", line 90>)
-            280 LOAD_GLOBAL             11 (__instrument__)
+            280 LOAD_GLOBAL             19 (__instrument__)
             282 CALL_FUNCTION            0
             284 POP_TOP
             286 LOAD_CONST              13 ('call_code')
-            288 LOAD_GLOBAL             11 (__instrument__)
+            288 LOAD_GLOBAL             19 (__instrument__)
             290 CALL_FUNCTION            0
             292 POP_TOP
             294 MAKE_FUNCTION            0
-            296 LOAD_GLOBAL             11 (__instrument__)
+            296 LOAD_GLOBAL             19 (__instrument__)
             298 CALL_FUNCTION            0
             300 POP_TOP
             302 STORE_NAME               9 (call_code)
 
-110         304 LOAD_GLOBAL             11 (__instrument__)
+110         304 LOAD_GLOBAL             19 (__instrument__)
             306 CALL_FUNCTION            0
             308 POP_TOP
             310 LOAD_CONST              14 (<code object turn at 0x10ea31420, file "source", line 110>)
-            312 LOAD_GLOBAL             11 (__instrument__)
+            312 LOAD_GLOBAL             19 (__instrument__)
             314 CALL_FUNCTION            0
             316 POP_TOP
             318 LOAD_CONST              15 ('turn')
-            320 LOAD_GLOBAL             11 (__instrument__)
+            320 LOAD_GLOBAL             19 (__instrument__)
             322 CALL_FUNCTION            0
             324 POP_TOP
             326 MAKE_FUNCTION            0
-            328 LOAD_GLOBAL             11 (__instrument__)
+            328 LOAD_GLOBAL             19 (__instrument__)
             330 CALL_FUNCTION            0
             332 POP_TOP
             334 STORE_NAME              10 (turn)
-            336 LOAD_GLOBAL             11 (__instrument__)
+            336 LOAD_GLOBAL             19 (__instrument__)
             338 CALL_FUNCTION            0
             340 POP_TOP
             342 LOAD_CONST              16 (None)
-            344 LOAD_GLOBAL             11 (__instrument__)
+            344 LOAD_GLOBAL             19 (__instrument__)
             346 CALL_FUNCTION            0
             348 POP_TOP
             350 RETURN_VALUE

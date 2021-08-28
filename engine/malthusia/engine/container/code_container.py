@@ -1,6 +1,5 @@
 import re
-from os import listdir
-from os.path import isfile, join
+import os
 from .instrument import Instrument
 
 import marshal, pickle
@@ -8,6 +7,11 @@ from ..restrictedpython import compile_restricted
 
 
 class CodeContainer:
+    """
+    CodeContainer compiles a given directory, and instruments the code. It is then used as the code
+    object representing a robot's code, to be run by a RobotRunner.
+    """
+
     def __init__(self, code):
         self.code = code
 
@@ -15,21 +19,21 @@ class CodeContainer:
     def from_directory_dict(cls, dic):
         code = {}
 
-        for filename in dic:
-            module_name = filename.split('.py')[0]
-            compiled = compile_restricted(cls.preprocess(dic[filename]), filename, 'exec')
+        for filepath in dic:
+            module_name = os.path.basename(filepath).split('.py')[0]
+            compiled = compile_restricted(cls.preprocess(dic[filepath]), filepath, 'exec')
             code[module_name] = Instrument.instrument(compiled)
 
         return cls(code)
 
     @classmethod
     def from_directory(cls, dirname):
-        files = [(f, join(dirname,f)) for f in listdir(dirname) if f[-3:] == '.py' and isfile(join(dirname, f))]
+        files = [os.path.abspath(os.path.join(dirname,f)) for f in os.listdir(dirname) if f[-3:] == '.py' and os.path.isfile(os.path.join(dirname, f))]
 
         code = {}
-        for filename, location in files:
+        for location in files:
             with open(location) as f:
-                code[filename] = f.read()
+                code[location] = f.read()
 
         return cls.from_directory_dict(code)
 
@@ -59,22 +63,26 @@ class CodeContainer:
             return cls.from_bytes(cls.preprocess(f.read()))
 
     @classmethod
+    def package_name(cls):
+        return cls.__module__.split(".", 1)[0]
+
+    @classmethod
     def preprocess(cls, content):
         """
-        Strips battlehack20.stubs imports from the code.
+        Strips package.stubs imports from the code.
 
         It removes lines containing one of the following imports:
-        - from battlehack20.stubs import *
-        - from battlehack20.stubs import a, b, c
+        - from package.stubs import *
+        - from package.stubs import a, b, c
 
         The regular expression that is used also supports non-standard whitespace styles like the following:
-        - from battlehack20.stubs import a,b,c
-        - from  battlehack20.stubs  import  a,  b,  c
+        - from package.stubs import a,b,c
+        - from  package.stubs  import  a,  b,  c
 
         Go to https://regex101.com/r/bhAqFE/6 to test the regular expression with custom input.
         """
 
-        pattern = r'^([ \t]*)from([ \t]+)malthusia\.stubs([ \t]+)import([ \t]+)(\*|([a-zA-Z_]+([ \t]*),([ \t]*))*[a-zA-Z_]+)([ \t]*)$'
+        pattern = r'^([ \t]*)from([ \t]+)' + cls.package_name() + r'\.stubs([ \t]+)import([ \t]+)(\*|([a-zA-Z_]+([ \t]*),([ \t]*))*[a-zA-Z_]+)([ \t]*)$'
 
         # Replace all stub imports
         while True:

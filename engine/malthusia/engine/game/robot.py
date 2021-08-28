@@ -34,6 +34,7 @@ class Robot:
 
     def kill(self):
         self.runner.kill()
+        del self.runner
         self.alive = False
 
     def log(self, msg):
