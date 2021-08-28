@@ -182,6 +182,7 @@ class RobotRunner:
         self.last_memory_usage = 0
 
         self.initialized = False
+        self.killed = False
 
         self.debug = debug
 
@@ -423,6 +424,9 @@ class RobotRunner:
         Runs one turn of the robot, initializing it if needed.
         :raises: RobotRunnerError if an error occurred from which the runner cannot recover (failed to initialize, out of memory)
         """
+        if self.killed:
+            raise RuntimeError("Cannot run a killed RobotRunner")
+
         if self.config.chess_clock_mechanism:
             self.bytecode = max(self.bytecode, 0) + self.config.bytecode_per_turn
         else:
@@ -435,4 +439,8 @@ class RobotRunner:
         self.do_turn()
 
     def kill(self):
-        pass
+        logger.debug(f"Killing RobotRunner {self}")
+        self.killed = True
+        # release some memory
+        del self.globals
+        del self.code
