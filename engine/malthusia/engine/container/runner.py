@@ -2,6 +2,8 @@ import sys
 import traceback
 import logging
 import collections.abc
+import re
+import os
 
 from ..restrictedpython import safe_builtins, Guards
 from time import sleep
@@ -399,7 +401,7 @@ class RobotRunner:
         except MemoryError:
             raise RobotRunnerError(f"MemoryError caused!")
         except:
-            self.error_method(traceback.format_exc(limit=5))
+            self.report_error()
         if not self.initialized:
             raise RobotRunnerError("Failed to initialize robot.")
         self.check_memory()
@@ -413,10 +415,19 @@ class RobotRunner:
             except MemoryError:
                 raise RobotRunnerError(f"MemoryError caused!")
             except:
-                self.error_method(traceback.format_exc(limit=5))
+                self.report_error()
         else:
             raise RobotRunnerError('Couldn\'t find turn() function.')
         self.check_memory()
+
+    def report_error(self):
+        error_str = traceback.format_exc(limit=1000)
+        this_file = os.path.abspath(__file__)
+        # remove apply_call, because it just clutters up everything while providing little of value
+        remove_apply = r'^\s*File "' + this_file.replace("/","\/") + r'", line \d+, in apply_call\s*\n\s*return func\(\*args, \*\*kwargs\)\s*\n'
+        modified_error_str = re.sub(remove_apply, "", error_str, flags=re.MULTILINE)
+        self.error_method(modified_error_str)
+
 
     def check_memory(self):
         mem_usage = memory.bytes_usage({k: v for k, v in self.globals.items() if k != "__builtins__"})
