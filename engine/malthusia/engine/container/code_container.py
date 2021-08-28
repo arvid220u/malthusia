@@ -1,6 +1,5 @@
 import re
-from os import listdir
-from os.path import isfile, join
+import os
 from .instrument import Instrument
 
 import marshal, pickle
@@ -20,21 +19,21 @@ class CodeContainer:
     def from_directory_dict(cls, dic):
         code = {}
 
-        for filename in dic:
-            module_name = filename.split('.py')[0]
-            compiled = compile_restricted(cls.preprocess(dic[filename]), filename, 'exec')
+        for filepath in dic:
+            module_name = os.path.basename(filepath).split('.py')[0]
+            compiled = compile_restricted(cls.preprocess(dic[filepath]), filepath, 'exec')
             code[module_name] = Instrument.instrument(compiled)
 
         return cls(code)
 
     @classmethod
     def from_directory(cls, dirname):
-        files = [(f, join(dirname,f)) for f in listdir(dirname) if f[-3:] == '.py' and isfile(join(dirname, f))]
+        files = [os.path.abspath(os.path.join(dirname,f)) for f in os.listdir(dirname) if f[-3:] == '.py' and os.path.isfile(os.path.join(dirname, f))]
 
         code = {}
-        for filename, location in files:
+        for location in files:
             with open(location) as f:
-                code[filename] = f.read()
+                code[location] = f.read()
 
         return cls.from_directory_dict(code)
 
