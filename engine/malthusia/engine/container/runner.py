@@ -415,7 +415,7 @@ class RobotRunner:
             except:
                 self.error_method(traceback.format_exc(limit=5))
         else:
-            self.error_method('Couldn\'t find turn function.')
+            raise RobotRunnerError('Couldn\'t find turn() function.')
         self.check_memory()
 
     def check_memory(self):
