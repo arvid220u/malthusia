@@ -8,6 +8,10 @@ from ..restrictedpython import compile_restricted
 
 
 class CodeContainer:
+    """
+    CodeContainer compiles a given directory, and instruments the code. It is then used as the code
+    object representing a robot's code, to be run by a RobotRunner.
+    """
 
     def __init__(self, code):
         self.code = code

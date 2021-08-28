@@ -2,7 +2,11 @@ import dis
 from types import SimpleNamespace
 
 class Instruction(SimpleNamespace):
-    def __init__(self, instruction, original: bool):
+    """
+    Instruction augments dis.Instruction with extra fields that are useful in our instrumentation.
+    """
+
+    def __init__(self, instruction: dis.Instruction, original: bool):
         vals = {a: b for a,b in zip(dis.Instruction._fields, instruction)}
         vals["orig_offset"] = vals["offset"]
         vals["original"] = original

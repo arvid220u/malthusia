@@ -8,6 +8,7 @@ from time import sleep
 from .instrument import Instrument
 from .builtins import *
 from . import memory
+from .code_container import CodeContainer
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,11 @@ class RobotRunnerConfig:
         self.memory_limit = memory_limit
 
 class RobotRunner:
+    """
+    RobotRunner is initialized with a code container, and is responsible for running the instrumented code.
+    It injects the builtins that are necessary and allowed, and modifies some of them to include instrumentation.
+    __init__(), run() and kill() are the primary methods.
+    """
 
     @staticmethod
     def validate_arguments(*args, error_type):
@@ -43,7 +49,7 @@ class RobotRunner:
             if "DANGEROUS" in type(arg).__module__:
                 raise error_type(f"arguments are invalid; argument {i} has type {type(arg)} which is user-defined and possibly dangerous")
 
-    def __init__(self, code, game_methods, log_method, error_method, config: RobotRunnerConfig, debug=False):
+    def __init__(self, code: CodeContainer, game_methods, log_method, error_method, config: RobotRunnerConfig, debug=False):
         self.builtins = Builtins(self)
         self.config = config
         self.globals = {
