@@ -8,6 +8,7 @@ from ..restrictedpython import compile_restricted
 
 
 class CodeContainer:
+
     def __init__(self, code):
         self.code = code
 
@@ -59,22 +60,26 @@ class CodeContainer:
             return cls.from_bytes(cls.preprocess(f.read()))
 
     @classmethod
+    def package_name(cls):
+        return cls.__module__.split(".", 1)[0]
+
+    @classmethod
     def preprocess(cls, content):
         """
-        Strips battlehack20.stubs imports from the code.
+        Strips package.stubs imports from the code.
 
         It removes lines containing one of the following imports:
-        - from battlehack20.stubs import *
-        - from battlehack20.stubs import a, b, c
+        - from package.stubs import *
+        - from package.stubs import a, b, c
 
         The regular expression that is used also supports non-standard whitespace styles like the following:
-        - from battlehack20.stubs import a,b,c
-        - from  battlehack20.stubs  import  a,  b,  c
+        - from package.stubs import a,b,c
+        - from  package.stubs  import  a,  b,  c
 
         Go to https://regex101.com/r/bhAqFE/6 to test the regular expression with custom input.
         """
 
-        pattern = r'^([ \t]*)from([ \t]+)malthusia\.stubs([ \t]+)import([ \t]+)(\*|([a-zA-Z_]+([ \t]*),([ \t]*))*[a-zA-Z_]+)([ \t]*)$'
+        pattern = r'^([ \t]*)from([ \t]+)' + cls.package_name() + r'\.stubs([ \t]+)import([ \t]+)(\*|([a-zA-Z_]+([ \t]*),([ \t]*))*[a-zA-Z_]+)([ \t]*)$'
 
         # Replace all stub imports
         while True:
