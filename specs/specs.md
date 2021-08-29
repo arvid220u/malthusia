@@ -1,6 +1,7 @@
 # Malthusia
 
 _Join the world of autonomous robots._
+
 The rules may change slightly, but there will never be any breaking changes. Current version: 0.0.1
 
 # Overview
@@ -24,14 +25,11 @@ Because bytecodes are a feature of the compiled code itself, the same program wi
 This is great, because it allows us to avoid using _time_ as a measure of computation, which leads to problems such as nondeterminism.
 
 Every round each robot sequentially takes its turn.
-If a robot attempts to exceed its bytecode limit (usually unexpectedly, if you have too big of a loop or something),
-its computation will be paused and then resumed at exactly that point next turn.
-The code will resume running just fine, but this can cause problems if, for example, you check if a tile is empty, then the robot is cut off and the others take their turns, and then you attempt to move into a now-occupied tile.
-Instead, simply return from the `turn()` function to end your turn.
-This will pause computation where you choose, and resume on the next line next turn.
+If a robot attempts to exceed its bytecode limit (usually unexpectedly, if you have too big of a loop or something), it will throw an error (but resume as if nothing happened the next turn).
+
 
 The per-turn bytecode limits for various robots are as follows:
-- Cow: 20000 per turn
+- Cow: 20,000 added per turn, up to 100,000 max.
 
 Robots can get their current bytecode with `get_bytecode()`. This is the amount of bytecode the robots have remaining for the turn.
 
