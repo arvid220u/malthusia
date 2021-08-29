@@ -327,6 +327,9 @@ class Builtins:
     def items(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
 
+    def get(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
     def keys(self, real_implementation):
         return self.generic_internal_cost_const(real_implementation, 1)
 
