@@ -1166,7 +1166,6 @@ class RestrictingNodeTransformer(ast.NodeTransformer):
     def visit_Import(self, node):
         """Allow `import` statements with restrictions.
         See check_import_names."""
-        print(ast.dump(node))
         return self.check_import_names(node)
 
     def visit_ImportFrom(self, node):
