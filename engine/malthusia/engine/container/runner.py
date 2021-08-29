@@ -291,8 +291,8 @@ class RobotRunner:
         if isinstance(obj, type(lambda: 1)):
             raise RuntimeError('Can\'t write to functions.')
 
-        if isinstance(obj, random.Random):
-            raise RuntimeError("Can't write to random.Random.")
+        if isinstance(obj, type) and obj.__module__ == "random":
+            raise RuntimeError("Can't write to random.")
 
         if isinstance(obj, collections.abc.Hashable):
             # all internal disallowed objs must be hashable because in a set

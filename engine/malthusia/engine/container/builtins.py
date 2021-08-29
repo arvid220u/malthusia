@@ -467,3 +467,6 @@ class Builtins:
 
     def tuple(self, real_implementation):
         return self.generic_internal_cost_one_arg_optional(real_implementation, lambda seq: len(seq))
+
+    def type(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
