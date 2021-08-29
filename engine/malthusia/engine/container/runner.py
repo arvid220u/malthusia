@@ -4,6 +4,7 @@ import logging
 import collections.abc
 import re
 import os
+import random
 
 from ..restrictedpython import safe_builtins, Guards
 from time import sleep
@@ -207,14 +208,14 @@ class RobotRunner:
             object_type = type(object)
             if object_type.__qualname__ == "type" and object_type.__module__ == "builtins":
                 object_type = object
-            if object_type.__module__ != "builtins":
+            if object_type.__module__ not in {"builtins", "random", "math"}:
                 return getattr(object, name, default)
             if object_type.__qualname__ == "module" and object.__name__ != "math":
                 return getattr(object, name, default)
             logger.debug("ok gets here")
             real_attr = getattr(object, name, default)
             logger.debug("full name of attr: " + get_full_name(real_attr))
-            if get_full_name(real_attr) not in {"builtins.builtin_function_or_method", "builtins.method_descriptor"}:
+            if get_full_name(real_attr) not in {"builtins.builtin_function_or_method", "builtins.method_descriptor", "builtins.method"}:
                 # we only care about builtin functions or methods
                 # we also care about method descriptors
                 return real_attr
@@ -226,7 +227,7 @@ class RobotRunner:
                 return instrumented_builtin(real_attr)
             # otherwise, we need to check if __self__ is a module or not
             logger.debug("module? " + get_full_name(real_attr.__self__))
-            if get_full_name(real_attr.__self__) == "builtins.module":
+            if get_full_name(real_attr.__self__) in {"builtins.module", "random.Random"}:
                 # we need to do nothing more
                 return instrumented_builtin(real_attr)
             # the last case is we need to unbound the method, then rebind it
@@ -289,6 +290,9 @@ class RobotRunner:
 
         if isinstance(obj, type(lambda: 1)):
             raise RuntimeError('Can\'t write to functions.')
+
+        if isinstance(obj, type) and obj.__module__ == "random":
+            raise RuntimeError("Can't write to random.")
 
         if isinstance(obj, collections.abc.Hashable):
             # all internal disallowed objs must be hashable because in a set
@@ -356,6 +360,13 @@ class RobotRunner:
             if name == 'math':
                 import math
                 return math
+            if name == "random":
+                # we could do importlib.reload(random) here and return random after del random.SystemRandom, del random.seed, etc etc etc
+                # reloading random could have effects elsewhere where we use random though, which is not desirable - we don't want bots to affect other game randomness
+                # instead, we just return a new instance of random.Random, seeded with the current randomness
+                # we need to add random.Random in self.write_call
+                # we also need to modify code in the getattr call to (1) instrument, and (2) restrict seed
+                return random.Random(random.random())
 
             raise ImportError('Module "' + name + '" does not exist.')
 

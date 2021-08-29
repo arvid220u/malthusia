@@ -1171,7 +1171,29 @@ class RestrictingNodeTransformer(ast.NodeTransformer):
     def visit_ImportFrom(self, node):
         """Allow `import from` statements with restrictions.
         See check_import_names."""
-        return self.check_import_names(node)
+        node = self.check_import_names(node)
+        manual_import_from = []
+        tempname = f"_{node.module}_temp"
+        imp = ast.Import(names=[ast.alias(name=node.module, asname=tempname)])
+        imp.lineno = node.lineno
+        imp.col_offset = node.col_offset
+        manual_import_from.append(imp)
+        for name in node.names:
+            asname = name.asname if name.asname is not None else name.name
+            new_name = ast.Assign(
+                targets=[ast.Name(asname, ast.Store())],
+                value=ast.Call(
+                    func=ast.Name('_getattr_', ast.Load()),
+                    args=[ast.Name(tempname, ast.Load()), ast.Str(name.name)],
+                    keywords=[]
+                )
+            )
+            new_name.lineno = node.lineno
+            new_name.col_offset = node.col_offset
+            ast.fix_missing_locations(new_name)
+            manual_import_from.append(new_name)
+        return manual_import_from
+
 
     def visit_alias(self, node):
         """Allow `as` statements in import and import from statements."""
