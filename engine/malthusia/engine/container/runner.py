@@ -4,6 +4,7 @@ import logging
 import collections.abc
 import re
 import os
+import random
 
 from ..restrictedpython import safe_builtins, Guards
 from time import sleep
@@ -290,6 +291,9 @@ class RobotRunner:
         if isinstance(obj, type(lambda: 1)):
             raise RuntimeError('Can\'t write to functions.')
 
+        if isinstance(obj, random.Random):
+            raise RuntimeError("Can't write to random.Random.")
+
         if isinstance(obj, collections.abc.Hashable):
             # all internal disallowed objs must be hashable because in a set
             if obj in disallowed_objs:
@@ -356,6 +360,13 @@ class RobotRunner:
             if name == 'math':
                 import math
                 return math
+            if name == "random":
+                # we could do importlib.reload(random) here and return random after del random.SystemRandom, del random.seed, etc etc etc
+                # reloading random could have effects elsewhere where we use random though, which is not desirable - we don't want bots to affect other game randomness
+                # instead, we just return a new instance of random.Random, seeded with the current randomness
+                # we need to add random.Random in self.write_call
+                # we also need to modify code in the getattr call to (1) instrument, and (2) restrict seed
+                return random.Random(random.random())
 
             raise ImportError('Module "' + name + '" does not exist.')
 
