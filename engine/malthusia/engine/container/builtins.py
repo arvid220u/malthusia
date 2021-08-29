@@ -417,6 +417,83 @@ class Builtins:
     def hypot(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
 
+    # random
+
+    def seed(self, real_implementation):
+        def internal_seed(a=None, version=2):
+            if a is None:
+                raise RuntimeError("Need to seed random with an actual value; system time is not available.")
+            cost = 1
+            self.runner.multinstrument_call(cost)
+            return real_implementation(a=a, version=version)
+        return internal_seed
+
+    def getstate(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 100)
+
+    def setstate(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 100)
+
+    def randbytes(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: x)
+
+    def randrange(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def randint(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def getrandbits(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: x)
+
+    def choice(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
+
+    def choices(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
+
+    def shuffle(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
+
+    def sample(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
+
+    def random(self, real_implementation):
+        return self.generic_internal_cost_const(real_implementation, 1)
+
+    def uniform(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def triangular(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def betavariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def expovariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def gammavariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def gauss(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def lognormvariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def normalvariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def vonmisesvariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def paretovariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
+    def weibullvariate(self, real_implementation):
+        return self.generic_internal_cost_args_and_kwargs(real_implementation, lambda a, kw: math.log(max([abs(x) for x in a + tuple(kw.values())])+1)/4 + 1)
+
 
     #
     # type initialization methods

@@ -208,14 +208,14 @@ class RobotRunner:
             object_type = type(object)
             if object_type.__qualname__ == "type" and object_type.__module__ == "builtins":
                 object_type = object
-            if object_type.__module__ != "builtins":
+            if object_type.__module__ not in {"builtins", "random", "math"}:
                 return getattr(object, name, default)
             if object_type.__qualname__ == "module" and object.__name__ != "math":
                 return getattr(object, name, default)
             logger.debug("ok gets here")
             real_attr = getattr(object, name, default)
             logger.debug("full name of attr: " + get_full_name(real_attr))
-            if get_full_name(real_attr) not in {"builtins.builtin_function_or_method", "builtins.method_descriptor"}:
+            if get_full_name(real_attr) not in {"builtins.builtin_function_or_method", "builtins.method_descriptor", "builtins.method"}:
                 # we only care about builtin functions or methods
                 # we also care about method descriptors
                 return real_attr
@@ -227,7 +227,7 @@ class RobotRunner:
                 return instrumented_builtin(real_attr)
             # otherwise, we need to check if __self__ is a module or not
             logger.debug("module? " + get_full_name(real_attr.__self__))
-            if get_full_name(real_attr.__self__) == "builtins.module":
+            if get_full_name(real_attr.__self__) in {"builtins.module", "random.Random"}:
                 # we need to do nothing more
                 return instrumented_builtin(real_attr)
             # the last case is we need to unbound the method, then rebind it
