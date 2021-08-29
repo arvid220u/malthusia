@@ -420,6 +420,30 @@ class Builtins:
     def hypot(self, real_implementation):
         return self.generic_internal_cost_one_arg(real_implementation, lambda x: len(x))
 
+    def acos(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
+    def asin(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
+    def atan(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
+    def atan2(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
+    def cos(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
+    def dist(self, real_implementation):
+        return self.generic_internal_cost_two_args(real_implementation, lambda x, y: math.log(abs(x)+abs(y)+1)/4+2)
+
+    def sin(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
+    def tan(self, real_implementation):
+        return self.generic_internal_cost_one_arg(real_implementation, lambda x: math.log(abs(x)+1)/4)
+
     # random
 
     def seed(self, real_implementation):
