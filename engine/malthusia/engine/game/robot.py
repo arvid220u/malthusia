@@ -5,20 +5,14 @@ from .robottype import RobotType
 from .constants import GameConstants
 
 class Robot:
-    STARTING_HEALTH = 1
 
-    def __init__(self, row, col, team, id, type=RobotType.PAWN):
+    def __init__(self, x, y, id: str, creator: str, type: RobotType):
         self.id = id
         self.type = type
-
-        self.row = row
-        self.col = col
+        self.creator = creator
+        self.x = x
+        self.y = y
         self.has_moved = False
-
-        self.health = Robot.STARTING_HEALTH
-        self.logs = []
-
-        self.team = team
 
         self.runner = None
         self.debug = False
@@ -38,46 +32,45 @@ class Robot:
         self.alive = False
 
     def log(self, msg):
-        msg = str(msg)
-        self.logs.append({'type': 'log', 'msg': msg})
+        if not self.debug:
+            return
 
-        if self.debug:
-            if self.type == RobotType.OVERLORD:
-                print(f'[Robot {self.id} log]', msg)
-            else:
-                team = 'BLACK' if self.team.value else 'WHITE'
-                print(f'[Robot {self.id} {team} log]', msg)
+        msg = str(msg)
+
+        if self.type == RobotType.OVERLORD:
+            print(f'[Robot {self.id} log]', msg)
+        else:
+            team = 'BLACK' if self.team.value else 'WHITE'
+            print(f'[Robot {self.id} {team} log]', msg)
 
     def error(self, msg):
-        if not isinstance(msg, str):
-            raise RuntimeError('Can only error strings.')
+        if not self.debug:
+            return
 
-        self.logs.append({'type': 'error', 'msg': msg})
+        msg = str(msg)
 
-        if self.debug:
-            if self.type == RobotType.OVERLORD:
-                print(f'\u001b[31m[Robot {self.id} error]\u001b[0m', msg)
-            else:
-                team = 'BLACK' if self.team.value else 'WHITE'
-                print(f'\u001b[31m[Robot {self.id} {team} error]\u001b[0m', msg)
+        if self.type == RobotType.OVERLORD:
+            print(f'\u001b[31m[Robot {self.id} error]\u001b[0m', msg)
+        else:
+            team = 'BLACK' if self.team.value else 'WHITE'
+            print(f'\u001b[31m[Robot {self.id} {team} error]\u001b[0m', msg)
 
     def fatal_error(self, msg):
-        if not isinstance(msg, str):
-            raise RuntimeError('Can only error strings.')
+        if not self.debug:
+            return
 
-        self.logs.append({'type': 'fatal_error', 'msg': msg})
+        msg = str(msg)
 
-        if self.debug:
-            if self.type == RobotType.OVERLORD:
-                print(f'\u001b[31m[Robot {self.id} FATAL ERROR]\u001b[0m', msg)
-            else:
-                team = 'BLACK' if self.team.value else 'WHITE'
-                print(f'\u001b[31m[Robot {self.id} {team} FATAL ERROR]\u001b[0m', msg)
+        if self.type == RobotType.OVERLORD:
+            print(f'\u001b[31m[Robot {self.id} FATAL ERROR]\u001b[0m', msg)
+        else:
+            team = 'BLACK' if self.team.value else 'WHITE'
+            print(f'\u001b[31m[Robot {self.id} {team} FATAL ERROR]\u001b[0m', msg)
 
     def turn(self):
         if not self.alive:
             raise RuntimeError("Cannot call turn() on unanimated or dead robot.")
-        self.logs.clear()
+
         self.has_moved = False
 
         try:
@@ -87,9 +80,10 @@ class Robot:
             self.kill()
 
     def __str__(self):
-        team = 'B' if self.team.value else 'W'
-        return '%s%3d' % (team, self.id)
+        type = str(self.type)[0]
+        abbreviated_id = self.id[:4]
+        return f"{type}:{abbreviated_id}"
 
     def __repr__(self):
-        team = 'BLACK' if self.team.value else 'WHITE'
-        return f'<ROBOT {self.id} {team}>'
+        type = str(self.type)
+        return f'<ROBOT {self.id} ({type})>'

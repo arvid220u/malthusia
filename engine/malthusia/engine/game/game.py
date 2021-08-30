@@ -8,30 +8,20 @@ from ..container.runner import RobotRunner
 
 class Game:
 
-    def __init__(self, code, board_size=GameConstants.BOARD_SIZE, max_rounds=GameConstants.MAX_ROUNDS, 
-                 seed=GameConstants.DEFAULT_SEED, sensor_radius=2, debug=False, colored_logs=True):
+    def __init__(self, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
         random.seed(seed)
-
-        self.code = code
 
         self.debug = debug
         self.colored_logs = colored_logs
         self.running = True
-        self.winner = None
 
         self.robot_count = 0
         self.queue = {}
-        self.leaders = []
+        self.dead_robots = []
 
-        self.sensor_radius = sensor_radius
-        self.board_size = board_size
-        self.board = [[None] * self.board_size for _ in range(self.board_size)]
+        self.map = Map()
+
         self.round = 0
-        self.max_rounds = max_rounds
-
-        self.lords = []
-        self.new_robot(None, None, Team.WHITE, RobotType.OVERLORD)
-        self.new_robot(None, None, Team.BLACK, RobotType.OVERLORD)
 
         self.board_states = []
 
@@ -42,13 +32,9 @@ class Game:
         if self.running:
             self.round += 1
 
-            if self.round > self.max_rounds:
-                self.check_over()
-
             if self.debug:
                 self.log_info(f'Turn {self.round}')
                 self.log_info(f'Queue: {self.queue}')
-                self.log_info(f'Lords: {self.lords}')
 
             for i in range(self.robot_count):
                 if i in self.queue:
@@ -76,6 +62,7 @@ class Game:
         self.board[robot.row][robot.col] = None
         robot.kill()
         del self.queue[i]
+        self.dead_robots.append(robot)
 
     def serialize(self):
         def serialize_robot(robot):
@@ -91,54 +78,6 @@ class Game:
             print(f'\u001b[32m[Game info] {msg}\u001b[0m')
         else:
             print(f'[Game info] {msg}')
-
-    def check_over(self):
-        winner = False
-
-        white, black = 0, 0
-        for col in range(self.board_size):
-            if self.board[0][col] and self.board[0][col].team == Team.BLACK: black += 1
-            if self.board[self.board_size - 1][col] and self.board[self.board_size - 1][col].team == Team.WHITE: white += 1
-
-        if black >= (self.board_size + 1) // 2:
-            winner = True
-
-        if white >= (self.board_size + 1) // 2:
-            winner = True
-
-        if self.round > self.max_rounds:
-            winner = True
-
-        if winner:
-            if white == black:
-                tie = True
-                for r in range(1, self.board_size):
-                    if tie:
-                        w, b = 0, 0
-                        for c in range(self.board_size):
-                            if self.board[r][c] and self.board[r][c].team == Team.BLACK: b += 1
-                            if self.board[self.board_size - r - 1][c] and self.board[self.board_size - r - 1][c].team == Team.WHITE: w += 1
-                        if w == b: continue
-                        self.winner = Team.WHITE if w > b else Team.BLACK
-                        tie = False
-                if tie:
-                    self.winner = random.choice([Team.WHITE, Team.BLACK])
-            else:
-                self.winner = Team.WHITE if white > black else Team.BLACK
-            self.running = False
-
-        if not self.running:
-            self.board_states.append([row[:] for row in self.board])
-            self.process_over()
-
-    def process_over(self):
-        """
-        Helper method to process once a game is finished (e.g. deleting robots)
-        """
-        for i in range(self.robot_count):
-            if i in self.queue:
-                self.delete_robot(i)
-
 
     def new_robot(self, row, col, team, robot_type):
         if robot_type == RobotType.OVERLORD:

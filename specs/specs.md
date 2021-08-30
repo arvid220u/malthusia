@@ -28,9 +28,7 @@ This is great, because it allows us to avoid using _time_ as a measure of comput
 
 Every round each robot sequentially takes its turn, by running the `turn()` function defined in every robot code. If a robot attempts to exceed its bytecode limit (usually unexpectedly, if you have too big of a loop or something), it will throw an error. The next turn, `turn()` will be called anew as normal.
 
-The bytecode remaining at the end of the turn is added to the limit for the next turn. The per-turn bytecode limits for various robots are as follows:
-- Wanderers: 20K bytecode per turn, up to 50K max.
-- Landscapers: 20K bytecode per turn, up to 50K max.
+The bytecode remaining at the end of the turn is added to the limit for the next turn. Every robot gets 20K bytecode per turn, up to 50K max.
 
 Robots can get their current bytecode with `get_bytecode()`. This is the amount of bytecode the robots have remaining for the turn.
 
