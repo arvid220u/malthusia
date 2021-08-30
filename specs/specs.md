@@ -2,20 +2,22 @@
 
 _Join the world of autonomous robots._
 
-The rules may change slightly, but there will never be any breaking changes. Current version: 0.0.1
+Version: 0.0.1.
 
 # Overview
 
-Malthusia is a grid-based 2D world. It is inhabited by no humans, and, initially, no one else either. One day, however, cows start appearing, each controlled by its own tiny computer program. Now you can create your own cow!
+Malthusia is a grid-based world of water and islands. It is inhabited by no humans, and, initially, no one else either. One day, however, robot wanderers start appearing, each controlled by its own tiny computer program. Soon, robot landscapers follow. Now you can create your own wanderer or landscaper!
 
 # Game Mechanics
 
 ## Turns
 
-Each round is broken down into sequential turns, one for each cow.
-In the order they were spawned, each cow may sense its surroundings and then optionally take an action.
+Each round is broken down into sequential turns, one for each robot.
+In the order they were spawned, each robot may sense its surroundings and then optionally take an action.
 
-# Bytecode Limits
+# Robot Limits
+
+## Bytecode
 
 Robots are also very limited in the amount of computation they are allowed to perform per **turn**.
 **Bytecodes** are a convenient measure of computation in languages like Python,
@@ -24,26 +26,41 @@ and a single line of code generally contains several bytecodes.
 Because bytecodes are a feature of the compiled code itself, the same program will always compile to the same bytecodes and thus take the same amount of computation on the same inputs.
 This is great, because it allows us to avoid using _time_ as a measure of computation, which leads to problems such as nondeterminism.
 
-Every round each robot sequentially takes its turn.
-If a robot attempts to exceed its bytecode limit (usually unexpectedly, if you have too big of a loop or something), it will throw an error (but resume as if nothing happened the next turn).
+Every round each robot sequentially takes its turn, by running the `turn()` function defined in every robot code. If a robot attempts to exceed its bytecode limit (usually unexpectedly, if you have too big of a loop or something), it will throw an error. The next turn, `turn()` will be called anew as normal.
 
-
-The per-turn bytecode limits for various robots are as follows:
-- Cow: 20,000 added per turn, up to 100,000 max.
+The bytecode remaining at the end of the turn is added to the limit for the next turn. The per-turn bytecode limits for various robots are as follows:
+- Wanderers: 20K bytecode per turn, up to 50K max.
+- Landscapers: 20K bytecode per turn, up to 50K max.
 
 Robots can get their current bytecode with `get_bytecode()`. This is the amount of bytecode the robots have remaining for the turn.
+
+## Memory
+
+Robots are limited to 10 KB in memory persisted between turns. Robots can get the number of bytes used at the end of the previous turn with `get_last_memory_usage()`.
 
 # API Reference
 
 Below is a quick reference of all methods available to robots. Make sure not to define your own functions with the same name as an API method, since that would overwrite the API method.
 
-#### Cow methods
+#### Shared methods
+
+All robots will have these:
 
 - `log()`: to print anything out, e.g. for debugging. Python's `print` will NOT work.
 - `get_bytecode()`: returns the number of bytecodes left.
+- `get_last_memory_usage()`: returns the number of bytes used at the end of the last turn
+
+#### Wanderer methods
+
 - `check_location(x, y)`: returns a `LocationInfo` object, or throws a `RobotError` if outside the vision range
-- `get_location()`: returns a `(x, y)` typle of the robot's location.
+- `get_location()`: returns a `(x, y)` tuple of the robot's location.
 - `move(direction)`: moves one step in the specified direction (which is of type `Direction`)
+
+#### Landscaper methods
+
+- all of the Wanderer's methods, plus
+- `dig(x, y)`: digs 1 unit of dirt from the specified location, or throws a `RobotError` if not a neighboring location or the elevation difference is too big
+- `place(x, y)`: places 1 unit of dirt at the specified location, or throws a `RobotError` if not a neighboring location, the elevation difference is too big, or the robot does not hold enough dirt in stock
 
 # Known Limitations and Bugs
 
@@ -53,4 +70,4 @@ If you are able to escape the sandbox and get into our servers, please send us a
 
 # Changelog
 
-- 0.0.1 (8/19/21)
+- 0.0.1 (8/30/21)
