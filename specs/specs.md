@@ -15,6 +15,27 @@ Malthusia is a grid-based world of water and islands. It is inhabited by no huma
 Each round is broken down into sequential turns, one for each robot.
 In the order they were spawned, each robot may sense its surroundings and then optionally take an action.
 
+## Chickpeas
+
+Wanderers and landscapers need chickpeas to survive. Both have a health level, decreasing by 1 every turn. By eating chickpeas, the robots can bring their health level back up. One chickpea brings the health level to the next multiple of 10, and then adds 10 more. Then, 1 health point is subtracted, as usual. For example, the following table illustrates the health level at the end of turn 1 and at the end of turn 2, given that the robot eats a chickpea in turn 2.
+
+Turn 1 health | Turn 2 health
+-------------- | ----
+-1 | dead :(
+0 | 19
+1 | 19
+2 | 19
+3 | 19
+4 | 19
+5 | 19
+6 | 19
+7 | 19
+8 | 19
+9 | 19
+10 | 29
+11 | 29
+etc | etc
+
 # Robot Limits
 
 ## Bytecode
