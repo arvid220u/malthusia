@@ -68,6 +68,7 @@ All robots will have these:
 - `log()`: to print anything out, e.g. for debugging. Python's `print` will NOT work.
 - `get_bytecode()`: returns the number of bytecodes left.
 - `get_last_memory_usage()`: returns the number of bytes used at the end of the last turn
+- `get_type()`: returns the `RobotType` of the robot
 
 #### Wanderer methods
 
