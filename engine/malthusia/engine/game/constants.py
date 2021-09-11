@@ -20,3 +20,6 @@ class GameConstants:
     MAX_HEALTH = 100
     # the start health
     START_HEALTH = 100
+
+    # the default elevation, outside specified map locations
+    DEFAULT_ELEVATION = -10

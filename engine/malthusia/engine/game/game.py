@@ -1,72 +1,64 @@
 import random
+import base64
+
 from .robot import Robot
-from .team import Team
 from .robottype import RobotType
 from .constants import GameConstants
 from ..container.runner import RobotRunner
 from .commonrobot import CommonRobot
 from .wanderer import Wanderer
+from .map import Map
+from ..container.code_container import CodeContainer
+
+
+def new_uid():
+    return base64.b64encode(random.randbytes(64)).decode("utf-8")
 
 
 class Game:
 
-    def __init__(self, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
+    def __init__(self, map_file, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
         random.seed(seed)
 
         self.debug = debug
         self.colored_logs = colored_logs
-        self.running = True
 
         self.robot_count = 0
         self.queue = {}
         self.dead_robots = []
 
-        self.map = Map()
+        self.map = Map.from_file(map_file)
 
         self.round = 0
 
-        self.board_states = []
+        self.map_states = []
 
         if self.debug:
             self.log_info(f'Seed: {seed}')
 
     def turn(self):
-        if self.running:
-            self.round += 1
+        self.round += 1
 
-            if self.debug:
-                self.log_info(f'Turn {self.round}')
-                self.log_info(f'Queue: {self.queue}')
+        if self.debug:
+            self.log_info(f'Turn {self.round}')
+            self.log_info(f'Queue: {self.queue}')
 
-            for i in range(self.robot_count):
-                if i in self.queue:
-                    robot = self.queue[i]
-                    robot.turn()
+        for i in range(self.robot_count):
+            if i in self.queue:
+                robot = self.queue[i]
+                robot.turn()
 
-                    if not robot.alive:
-                        self.delete_robot(i)
-                    self.check_over()
+                if not robot.alive:
+                    self.delete_robot(i)
 
-            if self.running:
-                self.board_states.append([row[:] for row in self.board])
-        else:
-            raise GameError('game is over')
+        self.map_states.append(self.map.serialize())
 
     def delete_robot(self, i):
         robot = self.queue[i]
-        self.board[robot.row][robot.col] = None
+        self.map.delete_robot(robot)
         robot.kill()
         del self.queue[i]
         self.dead_robots.append(robot)
-
-    def serialize(self):
-        def serialize_robot(robot):
-            if robot is None:
-                return None
-
-            return {'id': robot.id, 'team': robot.team, 'health': robot.health, 'logs': robot.logs[:]}
-
-        return [[serialize_robot(c) for c in r] for r in self.board]
 
     def log_info(self, msg):
         if self.colored_logs:
@@ -74,17 +66,28 @@ class Game:
         else:
             print(f'[Game info] {msg}')
 
-    def new_robot(self, row, col, team, robot_type):
-        # TODO: another way of getting ID?
-        id = self.robot_count
-        robot = Robot(row, col, team, id, robot_type)
+    def new_robot_xy(self):
+        # generate a random location in [-100,100]x[-100,100], making sure the location is free
+        sz = 100
+        max_tries = sz*sz*5
+        i = 0
+        while i < max_tries:
+            x, y = random.randint(-sz, sz), random.randint(-sz, sz)
+            if self.map.spawnable(x, y):
+                return x, y
+            i += 1
+        raise GameError(f"Cannot spawn robot; no spawnable location found after {max_tries} tries.")
+
+    def new_robot(self, creator: str, code: CodeContainer, robot_type: RobotType):
+        uid = new_uid()
+        x, y = self.new_robot_xy()
+        robot = Robot(x, y, uid, creator, robot_type)
 
         methods = {
             'GameError': GameError,
             'RobotType': RobotType,
             'RobotError': RobotError,
             'GameConstants': GameConstants,
-            'Team': Team,
         }
 
         def wrap_methods(modelrobot):
@@ -99,16 +102,17 @@ class Game:
         methods.update(wrap_methods(CommonRobot(self, robot)))
 
         if robot_type == RobotType.WANDERER:
-            methods.update(Wanderer(self, robot))
+            methods.update(wrap_methods(Wanderer(self, robot)))
         else:
             raise NotImplementedError
 
-        robot.animate(self.code[team.value], methods, debug=self.debug)
+        robot.animate(code, methods, debug=self.debug)
 
         self.queue[self.robot_count] = robot
-        self.board[row][col] = robot
+        self.map.add_robot(robot, x, y)
 
         self.robot_count += 1
+
 
 class RobotError(Exception):
     """Raised for illegal robot inputs"""
