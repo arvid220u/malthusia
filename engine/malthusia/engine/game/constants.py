@@ -16,3 +16,7 @@ class GameConstants:
     CHICKPEA_SPAWN_DENSITY = 1/100
     # the function that transforms old health into new health given a chickpea
     CHICKPEA_FN = lambda old : old + 20 - (old % 10)
+    # the maximum health a robot can have
+    MAX_HEALTH = 100
+    # the start health
+    START_HEALTH = 100
