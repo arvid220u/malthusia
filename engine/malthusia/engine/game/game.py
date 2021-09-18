@@ -11,7 +11,7 @@ from .wanderer import Wanderer
 from .map import Map
 from ..container.code_container import CodeContainer
 from .direction import Direction
-from .location import Location
+from .location import LocationInfo
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class Game:
             'RobotError': RobotError,
             'GameConstants': GameConstants,
             'Direction': Direction,
-            'Location': Location,
+            'LocationInfo': LocationInfo,
         }
 
         logger.debug(methods)

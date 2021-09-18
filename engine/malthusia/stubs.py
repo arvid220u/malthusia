@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union
 
-from .engine import RobotType, RobotError, GameError, GameConstants, Location, Direction
+from .engine import RobotType, RobotError, GameError, GameConstants, LocationInfo, Direction
 
 
 # The stubs in this file make it possible for editors to auto-complete the global methods
@@ -55,5 +55,5 @@ def move(direction: Direction) -> None:
     return move(direction)
 
 
-def check_location(x: int, y: int) -> Location:
+def check_location(x: int, y: int) -> LocationInfo:
     return check_location(x, y)

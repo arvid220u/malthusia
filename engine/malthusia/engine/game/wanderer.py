@@ -1,6 +1,6 @@
 import logging
 
-from .location import InternalLocation, Location
+from .location import InternalLocation, LocationInfo
 from .direction import Direction
 from .robot import RobotError
 from .robottype import RobotType
@@ -18,10 +18,10 @@ class Wanderer:
         self.game = game
         self.robot = robot
 
-    def check_location(self, x, y) -> Location:
+    def check_location(self, x, y) -> LocationInfo:
         if (x-self.robot.x)**2 + (y-self.robot.y)**2 > GameConstants.VISION_RADIUS[RobotType.WANDERER]**2:
             raise RobotError(f"this location is outside the robot's vision radius of {GameConstants.VISION_RADIUS[RobotType.WANDERER]}")
-        return self.game.map.get_location(x, y).to_public()
+        return self.game.map.get_location(x, y).to_location_info()
 
     def get_location(self) -> (int, int):
         x, y = self.robot.x, self.robot.y

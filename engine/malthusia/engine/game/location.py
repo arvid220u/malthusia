@@ -2,7 +2,7 @@ from typing import NamedTuple, List, Optional
 from .robot import Robot
 
 
-class Location(NamedTuple):
+class LocationInfo(NamedTuple):
     """
     This is the location information that can be visible by robots.
     """
@@ -40,5 +40,5 @@ class InternalLocation(NamedTuple):
     def serialize(self):
         return self._asdict()
 
-    def to_public(self):
-        return Location(x=self.x, y=self.y, elevation=self.elevation, occupied=self.robot is not None)
+    def to_location_info(self):
+        return LocationInfo(x=self.x, y=self.y, elevation=self.elevation, occupied=self.robot is not None)
