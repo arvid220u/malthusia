@@ -10,6 +10,8 @@ from .commonrobot import CommonRobot
 from .wanderer import Wanderer
 from .map import Map
 from ..container.code_container import CodeContainer
+from .direction import Direction
+from .location import Location
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +94,8 @@ class Game:
             'RobotType': RobotType,
             'RobotError': RobotError,
             'GameConstants': GameConstants,
+            'Direction': Direction,
+            'Location': Location,
         }
 
         logger.debug(methods)

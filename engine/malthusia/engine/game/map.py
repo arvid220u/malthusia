@@ -18,7 +18,9 @@ class Map:
         self.locations = {}
         self.add_locations(locations)
 
-    def add_location(self, loc):
+    def update_location(self, x, y, **fields):
+        old_loc = self.get_location(x, y)
+        loc = old_loc.copy_and_change_unsafe(**fields)
         if loc.x not in self.locations:
             self.locations[loc.x] = {}
         self.locations[loc.x][loc.y] = loc
@@ -61,9 +63,7 @@ class Map:
         """
         assert self.spawnable(x, y)
 
-        loc = self.get_location(x, y)
-        new_loc = loc.copy_and_change_unsafe(robot=robot)
-        self.add_location(new_loc)
+        self.update_location(x, y, robot=robot)
 
     def spawnable(self, x, y):
         """

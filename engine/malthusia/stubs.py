@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union
 
-from .engine.game.game import Team, RobotType, RobotError, GameError, GameConstants
+from .engine import RobotType, RobotError, GameError, GameConstants, Location, Direction
 
 
 # The stubs in this file make it possible for editors to auto-complete the global methods
@@ -45,3 +45,11 @@ def get_type() -> RobotType:
     Returns the robot’s type, either `RobotType.OVERLORD` or `RobotType.PAWN`.
     """
     return get_type()
+
+
+def get_location() -> Location:
+    return get_location()
+
+
+def move(direction: Direction):
+    return move(direction)

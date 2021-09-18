@@ -30,17 +30,21 @@ class Wanderer:
             raise RobotError('this unit has already moved this turn; robots can only move once per turn')
 
         x, y = self.robot.x, self.robot.y
-        if self.game.board[x][y] != self.robot:
+        old_loc: Location = self.game.map.get_location(x, y)
+
+        if old_loc.robot != self.robot:
             raise RobotError('something went wrong; please contact the devs')
 
-        new_x, new_y = (x, y) + direction.value
+        new_x, new_y = [v1 + v2 for v1, v2 in zip((x, y), direction.value)]
+        new_loc: Location = self.game.map.get_location(new_x, new_y)
 
-        if self.game.board[new_x][new_y]:
+        if new_loc.robot is not None:
             raise RobotError('you cannot move to a space that is already occupied')
 
-        self.game.board[new_x][new_y] = None
         self.robot.x = new_x
         self.robot.y = new_y
-        self.game.board[new_x][new_y] = self.robot
+
+        self.game.map.update_location(new_loc.x, new_loc.y, robot=self.robot)
+        self.game.map.update_location(old_loc.x, old_loc.y, robot=None)
 
         self.robot.has_moved = True
