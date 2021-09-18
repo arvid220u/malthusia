@@ -79,6 +79,6 @@ class BasicViewer:
                         new_board += '\033[0m\u001b[0m'
                     new_board += '] '
                 else:
-                    new_board += f'[{elevation: <3}] '
+                    new_board += f'[{elevation: <4}] '
             new_board += '\n'
         return new_board

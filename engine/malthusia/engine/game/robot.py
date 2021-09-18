@@ -70,7 +70,7 @@ class Robot:
 
     def __str__(self):
         type = str(self.type)[0]
-        abbreviated_id = self.id[:4]
+        abbreviated_id = self.id[:2]
         return f"{type}:{abbreviated_id}"
 
     def __repr__(self):
