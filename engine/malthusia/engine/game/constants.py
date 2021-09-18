@@ -1,4 +1,4 @@
-import pathlib
+import os
 
 class GameConstants:
 
@@ -26,4 +26,4 @@ class GameConstants:
     # the default elevation, outside specified map locations
     DEFAULT_ELEVATION = -10
 
-    STARTING_MAPFILE = pathlib.Path("map/initial.json").resolve()
+    STARTING_MAPFILE = os.path.join(os.path.dirname(__file__), "maps/initial.json")

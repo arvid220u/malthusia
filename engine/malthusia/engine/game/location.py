@@ -14,7 +14,7 @@ class Location(NamedTuple):
 
     @classmethod
     def from_dict(cls, d):
-        raise NotImplementedError
+        return Location(robot=None, dead_robots=[], **d)
 
     def copy_and_change_unsafe(self, **kwargs):
         """
@@ -25,3 +25,6 @@ class Location(NamedTuple):
                         elevation=self.elevation if "elevation" not in kwargs else kwargs["elevation"],
                         robot=self.robot if "robot" not in kwargs else kwargs["robot"],
                         dead_robots=self.dead_robots if "dead_robots" not in kwargs else kwargs["dead_robots"])
+
+    def serialize(self):
+        return self._asdict()

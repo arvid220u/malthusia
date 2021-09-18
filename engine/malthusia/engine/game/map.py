@@ -33,6 +33,9 @@ class Map:
             return default_location(x, y)
         return self.locations[x][y]
 
+    def serialize(self):
+        return [loc.serialize() for locdict in self.locations.values() for loc in locdict.values()]
+
     @classmethod
     def from_list(cls, l: List[Dict]):
         locations = [Location.from_dict(d) for d in l]

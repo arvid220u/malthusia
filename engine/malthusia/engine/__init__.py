@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from .game import Game, BasicViewer, GameConstants
+from .game import Game, BasicViewer, GameConstants, RobotType
 from .container import CodeContainer
 
 logger = logging.getLogger(__name__)
