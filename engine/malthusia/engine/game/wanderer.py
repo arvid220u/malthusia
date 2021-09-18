@@ -20,30 +20,30 @@ class Wanderer:
 
     def check_location(self, x, y) -> LocationInfo:
         if (x-self.robot.x)**2 + (y-self.robot.y)**2 > GameConstants.VISION_RADIUS[RobotType.WANDERER]**2:
-            raise RobotError(f"this location is outside the robot's vision radius of {GameConstants.VISION_RADIUS[RobotType.WANDERER]}")
+            raise RobotError(f"Out of vision radius: attempted to check location {(x, y)}, which is a distance {((x-self.robot.x)**2 + (y-self.robot.y)**2)**.5} away from the robot's location of {(self.robot.x, self.robot.y)}. The robot's vision radius is {GameConstants.VISION_RADIUS[RobotType.WANDERER]}.")
         return self.game.map.get_location(x, y).to_location_info()
 
     def get_location(self) -> (int, int):
         x, y = self.robot.x, self.robot.y
         if self.game.map.get_location(x, y).robot != self.robot:
-            raise RobotError('something went wrong; please contact the devs')
+            raise RobotError("Something went wrong; please contact the devs!")
         return x, y
 
     def move(self, direction: Direction):
         if self.robot.has_moved:
-            raise RobotError('this unit has already moved this turn; robots can only move once per turn')
+            raise RobotError("Already moved: this unit has already moved this turn, and robots can only move once per turn.")
 
         x, y = self.robot.x, self.robot.y
         old_loc: InternalLocation = self.game.map.get_location(x, y)
 
         if old_loc.robot != self.robot:
-            raise RobotError('something went wrong; please contact the devs')
+            raise RobotError("Something went wrong; please contact the devs!")
 
         new_x, new_y = [v1 + v2 for v1, v2 in zip((x, y), direction.value)]
         new_loc: InternalLocation = self.game.map.get_location(new_x, new_y)
 
         if new_loc.robot is not None:
-            raise RobotError('you cannot move to a space that is already occupied')
+            raise RobotError(f"Occupied space: attempted to move to {(new_loc.x, new_loc.y)}, which is occupied.")
 
         self.robot.x = new_x
         self.robot.y = new_y

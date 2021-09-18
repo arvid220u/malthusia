@@ -9,12 +9,20 @@ def turn():
     MUST be defined for robot to run
     This function will be called at the beginning of every turn and should contain the bulk of your robot commands
     """
-    loc = get_location()
-    log(f"my location: {loc}")
+    x, y = get_location()
+    log(f"my location: {(x, y)}")
     move(Direction.EAST)
-    loc = get_location()
+    x, y = get_location()
+    log(f"my location: {(x, y)}")
 
-    log(f"my location: {loc}")
+    info = check_location(x+2,y+1)
+    log(f"loc info: {info}")
+    info = check_location(x,y)
+    log(f"loc info: {info}")
+    info = check_location(x+5,y+1)
+    log(f"loc info: {info}")
+
+
     mem = get_last_memory_usage()
     log(f"last memory usage: {mem}")
     bytecode = get_bytecode()
