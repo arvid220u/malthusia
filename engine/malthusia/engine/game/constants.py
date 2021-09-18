@@ -1,5 +1,7 @@
 import os
 
+from .robottype import RobotType
+
 class GameConstants:
 
     # the default seed
@@ -27,3 +29,8 @@ class GameConstants:
     DEFAULT_ELEVATION = -10
 
     STARTING_MAPFILE = os.path.join(os.path.dirname(__file__), "maps/initial.json")
+
+    # a robot can see all locations within a euclidean distance of their vision radius (<=)
+    VISION_RADIUS = {
+        RobotType.WANDERER: 5
+    }

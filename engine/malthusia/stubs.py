@@ -47,9 +47,13 @@ def get_type() -> RobotType:
     return get_type()
 
 
-def get_location() -> Location:
+def get_location() -> (int, int):
     return get_location()
 
 
-def move(direction: Direction):
+def move(direction: Direction) -> None:
     return move(direction)
+
+
+def check_location(x: int, y: int) -> Location:
+    return check_location(x, y)

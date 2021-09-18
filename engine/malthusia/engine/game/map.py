@@ -1,11 +1,11 @@
 from typing import List, Dict
-from .location import Location
+from .location import InternalLocation
 from .constants import GameConstants
 import json
 
 
 def default_location(x, y):
-    return Location(x, y, GameConstants.DEFAULT_ELEVATION, None, [])
+    return InternalLocation(x, y, GameConstants.DEFAULT_ELEVATION, None, [])
 
 
 class Map:
@@ -13,9 +13,9 @@ class Map:
     An infinite map of locations.
     """
 
-    def __init__(self, locations: List[Location]):
+    def __init__(self, locations: List[InternalLocation]):
         # locations is indexed [x][y]
-        self.locations = {}
+        self.locations: Dict[Dict[InternalLocation]] = {}
         self.add_locations(locations)
 
     def update_location(self, x, y, **fields):
@@ -35,7 +35,7 @@ class Map:
             assert loc.y not in self.locations[loc.x]
             self.locations[loc.x][loc.y] = loc
 
-    def get_location(self, x, y):
+    def get_location(self, x, y) -> InternalLocation:
         if x not in self.locations or y not in self.locations[x]:
             return default_location(x, y)
         return self.locations[x][y]
@@ -45,7 +45,7 @@ class Map:
 
     @classmethod
     def from_list(cls, l: List[Dict]):
-        locations = [Location.from_dict(d) for d in l]
+        locations = [InternalLocation.from_dict(d) for d in l]
         return cls(locations)
 
     @classmethod

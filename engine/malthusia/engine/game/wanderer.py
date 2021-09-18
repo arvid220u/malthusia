@@ -1,8 +1,10 @@
 import logging
 
-from .location import Location
+from .location import InternalLocation, Location
 from .direction import Direction
 from .robot import RobotError
+from .robottype import RobotType
+from .constants import GameConstants
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +19,11 @@ class Wanderer:
         self.robot = robot
 
     def check_location(self, x, y) -> Location:
-        raise NotImplementedError
+        if (x-self.robot.x)**2 + (y-self.robot.y)**2 > GameConstants.VISION_RADIUS[RobotType.WANDERER]**2:
+            raise RobotError(f"this location is outside the robot's vision radius of {GameConstants.VISION_RADIUS[RobotType.WANDERER]}")
+        return self.game.map.get_location(x, y).to_public()
 
-    def get_location(self):
+    def get_location(self) -> (int, int):
         x, y = self.robot.x, self.robot.y
         if self.game.map.get_location(x, y).robot != self.robot:
             raise RobotError('something went wrong; please contact the devs')
@@ -30,13 +34,13 @@ class Wanderer:
             raise RobotError('this unit has already moved this turn; robots can only move once per turn')
 
         x, y = self.robot.x, self.robot.y
-        old_loc: Location = self.game.map.get_location(x, y)
+        old_loc: InternalLocation = self.game.map.get_location(x, y)
 
         if old_loc.robot != self.robot:
             raise RobotError('something went wrong; please contact the devs')
 
         new_x, new_y = [v1 + v2 for v1, v2 in zip((x, y), direction.value)]
-        new_loc: Location = self.game.map.get_location(new_x, new_y)
+        new_loc: InternalLocation = self.game.map.get_location(new_x, new_y)
 
         if new_loc.robot is not None:
             raise RobotError('you cannot move to a space that is already occupied')

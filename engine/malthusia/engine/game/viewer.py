@@ -49,7 +49,7 @@ class BasicViewer:
             state_index += 1
 
     def clear(self):
-        for i in range(self.view_box.height()):
+        for i in range(self.view_box.height()+1):
             sys.stdout.write("\033[F")  # back to previous line
             sys.stdout.write("\033[K")  # clear line
     
