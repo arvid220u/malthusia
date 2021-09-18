@@ -1,3 +1,5 @@
+import pathlib
+
 class GameConstants:
 
     # the default seed
@@ -15,7 +17,7 @@ class GameConstants:
     # the probability that a chickpea will spawn in a given location at a given round
     CHICKPEA_SPAWN_DENSITY = 1/100
     # the function that transforms old health into new health given a chickpea
-    CHICKPEA_FN = lambda old : old + 20 - (old % 10)
+    CHICKPEA_FN = lambda old: old + 20 - (old % 10)
     # the maximum health a robot can have
     MAX_HEALTH = 100
     # the start health
@@ -23,3 +25,5 @@ class GameConstants:
 
     # the default elevation, outside specified map locations
     DEFAULT_ELEVATION = -10
+
+    STARTING_MAPFILE = pathlib.Path("map/initial.json").resolve()

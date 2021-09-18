@@ -17,7 +17,7 @@ def new_uid():
 
 class Game:
 
-    def __init__(self, map_file, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
+    def __init__(self, map_file=GameConstants.STARTING_MAPFILE, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
         random.seed(seed)
 
         self.debug = debug

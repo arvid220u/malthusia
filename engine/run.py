@@ -94,12 +94,8 @@ if __name__ == '__main__':
 
     # This is where the interesting things start!
 
-    # Every game needs 2 code containers with each team's bot code.
-    code_container1 = CodeContainer.from_directory(args.player[0])
-    code_container2 = CodeContainer.from_directory(args.player[1] if len(args.player) > 1 else args.player[0])
-
     # This is how you initialize a game,
-    game = Game([code_container1, code_container2], board_size=args.board_size, max_rounds=args.max_rounds, 
+    game = Game(map_file=map_file, board_size=args.board_size, max_rounds=args.max_rounds,
                 seed=args.seed, debug=args.debug, colored_logs=not args.raw_text)
     
     # ... and the viewer.
