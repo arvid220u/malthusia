@@ -11,7 +11,7 @@ def turn():
     """
     loc = get_location()
     log(f"my location: {loc}")
-    move(Direction.NORTH)
+    move(Direction.EAST)
     loc = get_location()
     log(f"my location: {loc}")
     mem = get_last_memory_usage()

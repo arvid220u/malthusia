@@ -51,21 +51,21 @@ def play_all(delay=0.8, keep_history=False, real_time=False):
     If played in real time, make sure that the game does not print anything.
     """
 
-    # if real_time:
-    #     viewer_poison_pill = threading.Event()
-    #     viewer_thread = threading.Thread(target=viewer.play_synchronized, args=(viewer_poison_pill,), kwargs={'delay': delay, 'keep_history': keep_history})
-    #     viewer_thread.daemon = True
-    #     viewer_thread.start()
+    if real_time:
+        viewer_poison_pill = threading.Event()
+        viewer_thread = threading.Thread(target=viewer.play_synchronized, args=(viewer_poison_pill,), kwargs={'delay': delay, 'keep_history': keep_history})
+        viewer_thread.daemon = True
+        viewer_thread.start()
 
-    while True:
-        game.turn()
-
-    # if real_time:
-    #     viewer_poison_pill.set()
-    #     viewer_thread.join()
-    # else:
-    #     viewer.play(delay=delay, keep_history=keep_history)
-
+    try:
+        while True:
+            game.turn()
+    finally:
+        if real_time:
+            viewer_poison_pill.set()
+            viewer_thread.join()
+        else:
+            viewer.play(delay=delay, keep_history=keep_history)
 
 
 if __name__ == '__main__':
@@ -78,6 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', default='true', choices=('true','false'), help="In debug mode (defaults to true), bot logs and additional information are displayed.")
     parser.add_argument('--map-file', default=None, help="Path to map file")
     parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int, help="Override the seed used for random.")
+    parser.add_argument('--view-box', default=10, help="max coordinate value in viewer")
     args = parser.parse_args()
     args.debug = args.debug == 'true'
 
@@ -98,7 +99,8 @@ if __name__ == '__main__':
         game.new_robot(player, code, RobotType.WANDERER)
     
     # ... and the viewer.
-    # viewer = BasicViewer(args.board_size, game.board_states, colors=not args.raw_text)
+    view_box = (-args.view_box, args.view_box, args.view_box, -args.view_box)
+    viewer = BasicViewer(view_box, game.map_states, colors=not args.raw_text)
 
     # Here we check if the script is run using the -i flag.
     # If it is not, then we simply play the entire game.
