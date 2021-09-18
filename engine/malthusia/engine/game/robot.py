@@ -4,6 +4,7 @@ from ..container.runner import RobotRunnerError
 from .robottype import RobotType
 from .constants import GameConstants
 
+
 class Robot:
 
     def __init__(self, x, y, id: str, creator: str, type: RobotType):
@@ -37,11 +38,7 @@ class Robot:
 
         msg = str(msg)
 
-        if self.type == RobotType.OVERLORD:
-            print(f'[Robot {self.id} log]', msg)
-        else:
-            team = 'BLACK' if self.team.value else 'WHITE'
-            print(f'[Robot {self.id} {team} log]', msg)
+        print(f'[Robot {self.id} log]', msg)
 
     def error(self, msg):
         if not self.debug:
@@ -49,11 +46,7 @@ class Robot:
 
         msg = str(msg)
 
-        if self.type == RobotType.OVERLORD:
-            print(f'\u001b[31m[Robot {self.id} error]\u001b[0m', msg)
-        else:
-            team = 'BLACK' if self.team.value else 'WHITE'
-            print(f'\u001b[31m[Robot {self.id} {team} error]\u001b[0m', msg)
+        print(f'\u001b[31m[Robot {self.id} error]\u001b[0m', msg)
 
     def fatal_error(self, msg):
         if not self.debug:
@@ -61,11 +54,7 @@ class Robot:
 
         msg = str(msg)
 
-        if self.type == RobotType.OVERLORD:
-            print(f'\u001b[31m[Robot {self.id} FATAL ERROR]\u001b[0m', msg)
-        else:
-            team = 'BLACK' if self.team.value else 'WHITE'
-            print(f'\u001b[31m[Robot {self.id} {team} FATAL ERROR]\u001b[0m', msg)
+        print(f'\u001b[31m[Robot {self.id} FATAL ERROR]\u001b[0m', msg)
 
     def turn(self):
         if not self.alive:
@@ -87,3 +76,10 @@ class Robot:
     def __repr__(self):
         type = str(self.type)
         return f'<ROBOT {self.id} ({type})>'
+
+
+class RobotError(Exception):
+    """Raised for illegal robot inputs"""
+    pass
+
+

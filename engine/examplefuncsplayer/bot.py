@@ -9,5 +9,7 @@ def turn():
     MUST be defined for robot to run
     This function will be called at the beginning of every turn and should contain the bulk of your robot commands
     """
+    mem = get_last_memory_usage()
+    log(f"last memory usage: {mem}")
     bytecode = get_bytecode()
-    print(f"bytecode remaining: {bytecode}")
+    log(f"bytecode remaining: {bytecode}")

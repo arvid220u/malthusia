@@ -1,7 +1,8 @@
 import random
+import logging
 import base64
 
-from .robot import Robot
+from .robot import Robot, RobotError
 from .robottype import RobotType
 from .constants import GameConstants
 from ..container.runner import RobotRunner
@@ -9,6 +10,8 @@ from .commonrobot import CommonRobot
 from .wanderer import Wanderer
 from .map import Map
 from ..container.code_container import CodeContainer
+
+logger = logging.getLogger(__name__)
 
 
 def new_uid():
@@ -24,6 +27,7 @@ class Game:
         self.colored_logs = colored_logs
 
         self.robot_count = 0
+        # TODO: ideally use an ordered map (e.g. a red-black tree or something similar)
         self.queue = {}
         self.dead_robots = []
 
@@ -90,21 +94,31 @@ class Game:
             'GameConstants': GameConstants,
         }
 
+        logger.debug(methods)
+
+        def wrapper_method(modelrobot, method, *args):
+            logger.debug(method)
+            RobotRunner.validate_arguments(*args, error_type=RobotRunner)
+            return getattr(modelrobot, method)(*args)
+
         def wrap_methods(modelrobot):
-            methods = {}
-            for method in [m for m in dir(modelrobot) if callable(getattr(modelrobot, m))]:
-                def this_method(*args):
-                    RobotRunner.validate_arguments(*args, error_type=RobotRunner)
-                    return getattr(modelrobot, method)(*args)
-                methods[method] = this_method
-            return methods
+            wrapped_methods = {}
+            for method in [m for m in dir(modelrobot) if callable(getattr(modelrobot, m)) and not m.startswith("_")]:
+                logger.debug(method)
+                logger.debug(type(method))
+                wrapped_methods[method] = (lambda modelrobot, method: lambda *args: wrapper_method(modelrobot, method, *args))(modelrobot, method)
+            logger.debug(wrapped_methods)
+            return wrapped_methods
 
         methods.update(wrap_methods(CommonRobot(self, robot)))
+        logger.debug(methods)
 
         if robot_type == RobotType.WANDERER:
             methods.update(wrap_methods(Wanderer(self, robot)))
         else:
             raise NotImplementedError
+
+        logger.debug(methods)
 
         robot.animate(code, methods, debug=self.debug)
 
@@ -112,11 +126,6 @@ class Game:
         self.map.add_robot(robot, x, y)
 
         self.robot_count += 1
-
-
-class RobotError(Exception):
-    """Raised for illegal robot inputs"""
-    pass
 
 
 class GameError(Exception):

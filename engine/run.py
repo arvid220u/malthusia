@@ -40,9 +40,6 @@ def step(number_of_turns=1):
     """
 
     for i in range(number_of_turns):
-        if not game.running:
-            print(f'{game.winner} has won!')
-            break
         game.turn()
         # viewer.view()
 

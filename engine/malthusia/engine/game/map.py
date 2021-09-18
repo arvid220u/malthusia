@@ -18,6 +18,11 @@ class Map:
         self.locations = {}
         self.add_locations(locations)
 
+    def add_location(self, loc):
+        if loc.x not in self.locations:
+            self.locations[loc.x] = {}
+        self.locations[loc.x][loc.y] = loc
+
     def add_locations(self, locations):
         """
         precondition: none of the locations already exist
@@ -58,7 +63,7 @@ class Map:
 
         loc = self.get_location(x, y)
         new_loc = loc.copy_and_change_unsafe(robot=robot)
-        self.locations[x][y] = new_loc
+        self.add_location(new_loc)
 
     def spawnable(self, x, y):
         """

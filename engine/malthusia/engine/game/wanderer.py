@@ -1,5 +1,11 @@
+import logging
+
 from .location import Location
 from .direction import Direction
+from .robot import RobotError
+
+logger = logging.getLogger(__name__)
+
 
 class Wanderer:
     """
@@ -14,8 +20,8 @@ class Wanderer:
         raise NotImplementedError
 
     def get_location(self):
-        x, y = robot.x, robot.y
-        if self.board[x][y] != robot:
+        x, y = self.robot.x, self.robot.y
+        if self.game.board[x][y] != self.robot:
             raise RobotError('something went wrong; please contact the devs')
         return x, y
 
@@ -27,14 +33,14 @@ class Wanderer:
         if self.game.board[x][y] != self.robot:
             raise RobotError('something went wrong; please contact the devs')
 
-        new_x, new_y = (x, y) + direction
+        new_x, new_y = (x, y) + direction.value
 
-        if self.board[new_x][new_y]:
+        if self.game.board[new_x][new_y]:
             raise RobotError('you cannot move to a space that is already occupied')
 
-        self.board[new_x][new_y] = None
-        robot.x = new_x
-        robot.y = new_y
-        self.board[new_x][new_y] = robot
+        self.game.board[new_x][new_y] = None
+        self.robot.x = new_x
+        self.robot.y = new_y
+        self.game.board[new_x][new_y] = self.robot
 
-        robot.has_moved = True
+        self.robot.has_moved = True

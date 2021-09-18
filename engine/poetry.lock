@@ -37,23 +37,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
-name = "importlib-metadata"
-version = "4.6.4"
-description = "Read metadata from Python packages"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-typing-extensions = {version = ">=3.6.4", markers = "python_version < \"3.8\""}
-zipp = ">=0.5"
-
-[package.extras]
-docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
-perf = ["ipython"]
-testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "packaging", "pep517", "pyfakefs", "flufl.flake8", "pytest-perf (>=0.9.2)", "pytest-black (>=0.3.7)", "pytest-mypy", "importlib-resources (>=1.3)"]
-
-[[package]]
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
@@ -74,17 +57,15 @@ pyparsing = ">=2.0.2"
 
 [[package]]
 name = "pluggy"
-version = "0.13.1"
+version = "1.0.0"
 description = "plugin and hook calling mechanisms for python"
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[package.dependencies]
-importlib-metadata = {version = ">=0.12", markers = "python_version < \"3.8\""}
+python-versions = ">=3.6"
 
 [package.extras]
 dev = ["pre-commit", "tox"]
+testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "py"
@@ -104,7 +85,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "pytest"
-version = "6.2.4"
+version = "6.2.5"
 description = "pytest: simple powerful testing with Python"
 category = "main"
 optional = false
@@ -114,10 +95,9 @@ python-versions = ">=3.6"
 atomicwrites = {version = ">=1.0", markers = "sys_platform == \"win32\""}
 attrs = ">=19.2.0"
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
-importlib-metadata = {version = ">=0.12", markers = "python_version < \"3.8\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=0.12,<1.0.0a1"
+pluggy = ">=0.12,<2.0"
 py = ">=1.8.2"
 toml = "*"
 
@@ -169,14 +149,6 @@ dev = ["autoflake (>=1.3.1,<2.0.0)", "flake8 (>=3.8.3,<4.0.0)"]
 doc = ["mkdocs (>=1.1.2,<2.0.0)", "mkdocs-material (>=5.4.0,<6.0.0)", "markdown-include (>=0.5.1,<0.6.0)"]
 
 [[package]]
-name = "typing-extensions"
-version = "3.10.0.0"
-description = "Backported and Experimental Type Hints for Python 3.5+"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "uncompyle6"
 version = "3.7.4"
 description = "Python cross-version byte-code decompiler"
@@ -190,7 +162,7 @@ xdis = ">=5.0.4,<5.1.0"
 
 [[package]]
 name = "xdis"
-version = "5.0.11"
+version = "5.0.12"
 description = "Python cross-version byte-code disassembler and marshal routines"
 category = "dev"
 optional = false
@@ -200,22 +172,10 @@ python-versions = "*"
 click = "*"
 six = ">=1.10.0"
 
-[[package]]
-name = "zipp"
-version = "3.5.0"
-description = "Backport of pathlib-compatible object wrapper for zip files"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
-testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
-
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.6,<3.10"
-content-hash = "7b922ff8d2621b95cd1102aaa1e79b10cdca39b7014c3f813c73a42eb6e1ff59"
+python-versions = ">=3.9,<3.10"
+content-hash = "90719025591076a77b9a1f503bc14c842bb50e165f3a1c69ace66fa30b6c9487"
 
 [metadata.files]
 atomicwrites = [
@@ -234,10 +194,6 @@ colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
-importlib-metadata = [
-    {file = "importlib_metadata-4.6.4-py3-none-any.whl", hash = "sha256:ed5157fef23a4bc4594615a0dd8eba94b2bb36bf2a343fa3d8bb2fa0a62a99d5"},
-    {file = "importlib_metadata-4.6.4.tar.gz", hash = "sha256:7b30a78db2922d78a6f47fb30683156a14f3c6aa5cc23f77cc8967e9ab2d002f"},
-]
 iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},
     {file = "iniconfig-1.1.1.tar.gz", hash = "sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32"},
@@ -247,8 +203,8 @@ packaging = [
     {file = "packaging-21.0.tar.gz", hash = "sha256:7dc96269f53a4ccec5c0670940a4281106dd0bb343f47b7471f779df49c2fbe7"},
 ]
 pluggy = [
-    {file = "pluggy-0.13.1-py2.py3-none-any.whl", hash = "sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d"},
-    {file = "pluggy-0.13.1.tar.gz", hash = "sha256:15b2acde666561e1298d71b523007ed7364de07029219b604cf808bfa1c765b0"},
+    {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
+    {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
 py = [
     {file = "py-1.10.0-py2.py3-none-any.whl", hash = "sha256:3b80836aa6d1feeaa108e046da6423ab8f6ceda6468545ae8d02d9d58d18818a"},
@@ -259,8 +215,8 @@ pyparsing = [
     {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
 ]
 pytest = [
-    {file = "pytest-6.2.4-py3-none-any.whl", hash = "sha256:91ef2131a9bd6be8f76f1f08eac5c5317221d6ad1e143ae03894b862e8976890"},
-    {file = "pytest-6.2.4.tar.gz", hash = "sha256:50bcad0a0b9c5a72c8e4e7c9855a3ad496ca6a881a3641b4260605450772c54b"},
+    {file = "pytest-6.2.5-py3-none-any.whl", hash = "sha256:7310f8d27bc79ced999e760ca304d69f6ba6c6649c0b60fb0e04a4a77cacc134"},
+    {file = "pytest-6.2.5.tar.gz", hash = "sha256:131b36680866a76e6781d13f101efb86cf674ebb9762eb70d3082b6f29889e89"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
@@ -283,11 +239,6 @@ typer = [
     {file = "typer-0.3.2-py3-none-any.whl", hash = "sha256:ba58b920ce851b12a2d790143009fa00ac1d05b3ff3257061ff69dbdfc3d161b"},
     {file = "typer-0.3.2.tar.gz", hash = "sha256:5455d750122cff96745b0dec87368f56d023725a7ebc9d2e54dd23dc86816303"},
 ]
-typing-extensions = [
-    {file = "typing_extensions-3.10.0.0-py2-none-any.whl", hash = "sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497"},
-    {file = "typing_extensions-3.10.0.0-py3-none-any.whl", hash = "sha256:779383f6086d90c99ae41cf0ff39aac8a7937a9283ce0a414e5dd782f4c94a84"},
-    {file = "typing_extensions-3.10.0.0.tar.gz", hash = "sha256:50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342"},
-]
 uncompyle6 = [
     {file = "uncompyle6-3.7.4-py2-none-any.whl", hash = "sha256:61e91c0d3f58bdc4282833ac71b84c75070d3d4b91d0dada93278e7d32266c1a"},
     {file = "uncompyle6-3.7.4-py2.4.egg", hash = "sha256:fb9fe09fb9e4b491d9c59d95b7bfa40c096f78f17f07c62d1303f449a5dfd0d6"},
@@ -305,22 +256,19 @@ uncompyle6 = [
     {file = "uncompyle6-3.7.4.tar.gz", hash = "sha256:af8330861bf940e7a3ae0f06d129b8e645191a36bf73ca15ff51997a837d41f8"},
 ]
 xdis = [
-    {file = "xdis-5.0.11-py2.4.egg", hash = "sha256:d084a2e5bf9ace5f0663142f29b48e87cbc3976280865bd69e1de2090e12c4a0"},
-    {file = "xdis-5.0.11-py2.5.egg", hash = "sha256:79d0c93651dff6ad953d39fa61eb11ff39f7864cf00cf54439db498ec7451ac3"},
-    {file = "xdis-5.0.11-py2.6.egg", hash = "sha256:4e3a0fd311d27c0d325b2d685556c2a22a3f3cbc6fa3cf82e10beb349db7aa61"},
-    {file = "xdis-5.0.11-py2.7.egg", hash = "sha256:4d7bbbbdb8c1d137c2ae247a55b020531c5e1f64ca99f011708650f2024e80ac"},
-    {file = "xdis-5.0.11-py2.py3-none-any.whl", hash = "sha256:9d3fa5af192faac7af1ecaa12aa55f0ce80db612eb1915dfdabe5584f7b3efc1"},
-    {file = "xdis-5.0.11-py3.2.egg", hash = "sha256:a1799537dd455faef0c35d8790a0cdcbecde750dbec946048fb1f380550527cf"},
-    {file = "xdis-5.0.11-py3.3.egg", hash = "sha256:e3897395ba3c7f12894b4231f92d156d4cd53ba66a180035cdc926d0b6db4149"},
-    {file = "xdis-5.0.11-py3.4.egg", hash = "sha256:8211ef0abe35c53b171c74b16e0678098bfab35bb9474e4e7c52a362e841b307"},
-    {file = "xdis-5.0.11-py3.5.egg", hash = "sha256:917fad70139e36a3be6eeb5fac99a5e38af19ae32e2382124df8270bc00fc73b"},
-    {file = "xdis-5.0.11-py3.6.egg", hash = "sha256:9a8b180fd8d2f84157adc380b7a6ae5f4c3bab6b7b352b4b8019b33efd48c3cd"},
-    {file = "xdis-5.0.11-py3.7.egg", hash = "sha256:a10864ebf29664bd7aeeb72f343a33dcb881357c319c0218d885186f6f9f4501"},
-    {file = "xdis-5.0.11-py3.8.egg", hash = "sha256:053b833224818bc89a5ee6eb96deede12cbab2ef607d714adb9d8d0656d785c2"},
-    {file = "xdis-5.0.11-py3.9.egg", hash = "sha256:a00cd252ec75a8fd0441092db21a7bfa8dd8297471219e5b50e7de5a21983c9b"},
-    {file = "xdis-5.0.11.tar.gz", hash = "sha256:089740d8c4878ed6373f88972fa421c49f14006cbcdfb3fc90398ad85b3c6664"},
-]
-zipp = [
-    {file = "zipp-3.5.0-py3-none-any.whl", hash = "sha256:957cfda87797e389580cb8b9e3870841ca991e2125350677b2ca83a0e99390a3"},
-    {file = "zipp-3.5.0.tar.gz", hash = "sha256:f5812b1e007e48cff63449a5e9f4e7ebea716b4111f9c4f9a645f91d579bf0c4"},
+    {file = "xdis-5.0.12-py2.4.egg", hash = "sha256:b505dbbd4e7792ef27d5e159da84d4618705badda4cded4d9e53f8a800c11ff4"},
+    {file = "xdis-5.0.12-py2.5.egg", hash = "sha256:277cbc3a2aa55968c06debd5d1d7a661212fe53552c490dc51a2ca80c7131ac1"},
+    {file = "xdis-5.0.12-py2.6.egg", hash = "sha256:62484a3a0faf81b02cec5f25c0a80d13710db0c9f3e6870164a75f587a3699ea"},
+    {file = "xdis-5.0.12-py2.7.egg", hash = "sha256:4d08b8a3e235fb6e79b82734bfc00af3ba338aab318023cdd7168d09bb3b9970"},
+    {file = "xdis-5.0.12-py2.py3-none-any.whl", hash = "sha256:602a09be2ac93aacc522b8ed477314936d25865527bfe848a9d8a7ec740034ac"},
+    {file = "xdis-5.0.12-py3.1.egg", hash = "sha256:0410718827ba0b5618bf22eaff96b814bd69a3afeee88a90a6f6b51964c9ca6c"},
+    {file = "xdis-5.0.12-py3.2.egg", hash = "sha256:c7ef7fcd951ced65ef5560863c316afbefb23d9c6e81214f67f36d3af23279f9"},
+    {file = "xdis-5.0.12-py3.3.egg", hash = "sha256:dcead744d1e358728e27f38873e74c8bb7f6f0976f16fab914cbf5174d75990a"},
+    {file = "xdis-5.0.12-py3.4.egg", hash = "sha256:b8cf96b3ba095e072283aee610940e7b7bb0396e2b1f63dee9f7392f6f148cc2"},
+    {file = "xdis-5.0.12-py3.5.egg", hash = "sha256:c619ee44d6b80f414a21d25da3f6d6a8165f205258079997554e2a6cb85e52d9"},
+    {file = "xdis-5.0.12-py3.6.egg", hash = "sha256:c628609229d364dd5f738422af13d329d4d48e2d319912d772ef3c011f40559e"},
+    {file = "xdis-5.0.12-py3.7.egg", hash = "sha256:310d864451e2c15b5b7601f066ca93e5d7ff00e71f0883e5d11d3fe740de0a41"},
+    {file = "xdis-5.0.12-py3.8.egg", hash = "sha256:0972cb247b69f4f3bde903c49dcb286d03825a51c9903adcf5132db9b13bd169"},
+    {file = "xdis-5.0.12-py3.9.egg", hash = "sha256:3427dc107412b3d83bae095be6f46ec97610b244215d37105420cec3f4c40895"},
+    {file = "xdis-5.0.12.tar.gz", hash = "sha256:fba33d89574eca1a070c2a46f5f131866ef141df23feef937a00406a669e665f"},
 ]
