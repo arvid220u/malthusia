@@ -21,7 +21,7 @@ class Wanderer:
 
     def get_location(self):
         x, y = self.robot.x, self.robot.y
-        if self.game.board[x][y] != self.robot:
+        if self.game.map.get_location(x, y).robot != self.robot:
             raise RobotError('something went wrong; please contact the devs')
         return x, y
 
