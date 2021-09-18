@@ -66,8 +66,6 @@ def play_all(delay=0.8, keep_history=False, real_time=False):
     # else:
     #     viewer.play(delay=delay, keep_history=keep_history)
 
-    print(f'{game.winner} wins!')
-
 
 
 if __name__ == '__main__':
