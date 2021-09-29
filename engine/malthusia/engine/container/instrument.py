@@ -79,10 +79,16 @@ class Instrument:
                     injection.append(
                         dis.Instruction(opcode=dis.opmap["LOAD_GLOBAL"], opname="LOAD_GLOBAL", arg=name_indices[dangerous_exception], argval=dangerous_exception, argrepr=dangerous_exception, offset=None, starts_line=None, is_jump_target=None),
                     )
+                injection.append(dis.Instruction(opcode=dis.opmap["BUILD_TUPLE"], opname="BUILD_TUPLE", arg=len(Instrument.DANGEROUS_EXCEPTIONS), argval=len(Instrument.DANGEROUS_EXCEPTIONS), argrepr="", offset=None, starts_line=None, is_jump_target=None))
+                if sys.version_info >= (3, 9):
+                    injection.append(dis.Instruction(opcode=dis.opmap["JUMP_IF_NOT_EXC_MATCH"], opname="JUMP_IF_NOT_EXC_MATCH", arg=previous_except_loc, argval=previous_except_loc, argrepr="", offset=None, starts_line=None, is_jump_target=None))
+                else:
+                    # python 3.8 uses the compare op instead
+                    injection.extend([
+                        dis.Instruction(opcode=dis.opmap["COMPARE_OP"], opname="COMPARE_OP", arg=10, argval="exception match", argrepr="exception match", offset=None, starts_line=None, is_jump_target=None),
+                        dis.Instruction(opcode=dis.opmap["POP_JUMP_IF_FALSE"], opname="POP_JUMP_IF_FALSE", arg=previous_except_loc, argval=previous_except_loc, argrepr="", offset=None, starts_line=None, is_jump_target=None),
+                    ])
                 injection.extend([
-                    dis.Instruction(opcode=dis.opmap["BUILD_TUPLE"], opname="BUILD_TUPLE", arg=len(Instrument.DANGEROUS_EXCEPTIONS), argval=len(Instrument.DANGEROUS_EXCEPTIONS), argrepr="", offset=None, starts_line=None, is_jump_target=None),
-                    dis.Instruction(opcode=dis.opmap["COMPARE_OP"], opname="COMPARE_OP", arg=10, argval="exception match", argrepr="exception match", offset=None, starts_line=None, is_jump_target=None),
-                    dis.Instruction(opcode=dis.opmap["POP_JUMP_IF_FALSE"], opname="POP_JUMP_IF_FALSE", arg=previous_except_loc, argval=previous_except_loc, argrepr="", offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
                     dis.Instruction(opcode=dis.opmap["POP_TOP"], opname="POP_TOP", arg=None, argval=None, argrepr=None, offset=None, starts_line=None, is_jump_target=None),
@@ -294,6 +300,10 @@ class Instrument:
         :param bytecode: a code object, the bytecode submitted by the player
         :return: a new code object that has been injected with our bytecode counter
         """
+        if sys.version_info < (3,8):
+            raise RuntimeError(f"Python version {sys.version_info} is not supported. Please upgrade to 3.9 (or 3.8).")
+        if sys.version_info < (3,9):
+            logger.warn(f"Support for Python version {sys.version_info} is experimental only. Please upgrade to 3.9 or proceed at your own risk.")
 
         for const in bytecode.co_consts:
             if isinstance(const, collections.abc.Sized):
@@ -346,7 +356,11 @@ class Instrument:
             instructions, new_names, new_consts, new_stacksize = Instrument.instrument_binary_multiply(instructions, new_names, new_consts, new_stacksize)
 
         if reraise_dangerous_exceptions:
+            logger.debug("INSTRS BEFORE RERAISE:")
+            logger.debug("\n".join([f"{x.opname}\t\t{x.arg} ({x.argrepr})" for x in instructions]))
             instructions, new_names, new_consts, new_stacksize = Instrument.reraise_dangerous_exceptions(instructions, new_names, new_consts, new_stacksize)
+            logger.debug("INSTRS AFTER RERAISE:")
+            logger.debug("\n".join([f"{x.opname}\t\t{x.arg} ({x.argrepr})" for x in instructions]))
 
         # Make sure our code can locate the __instrument__ call
         function_name_index = len(new_names)  # we will be inserting our __instrument__ call at the end of co_names
@@ -568,8 +582,11 @@ class Instrument:
         # return Instrument.build_code(bytecode, new_code, new_names, new_consts, new_lnotab)
         final_code = Instrument.build_code(bytecode, new_stacksize, new_code, new_names, new_consts, new_lnotab)
 
+        logger.debug("INITIAL CODE:")
+        logger.debug("\n" + str(dis.Bytecode(bytecode).dis()))
+        logger.debug("END initial code")
         logger.debug("FINAL CODE:")
-        logger.debug(dis.Bytecode(final_code).dis())
+        logger.debug("\n" + str(dis.Bytecode(final_code).dis()))
         logger.debug("END final code")
 
         return final_code

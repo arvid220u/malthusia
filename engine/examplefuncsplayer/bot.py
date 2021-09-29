@@ -19,8 +19,11 @@ def turn():
     log(f"loc info: {info}")
     info = check_location(x,y)
     log(f"loc info: {info}")
-    info = check_location(x+5,y+1)
-    log(f"loc info: {info}")
+    try:
+        info = check_location(x+5,y+1)
+        log(f"loc info: {info}")
+    except Exception as e:
+        log(e)
 
 
     mem = get_last_memory_usage()
