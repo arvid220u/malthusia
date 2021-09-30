@@ -25,10 +25,12 @@ class GameConstants:
     # the start health
     START_HEALTH = 100
 
+    MOVE_ELEVATION_THRESHOLD = 10
+
     # the default elevation, outside specified map locations
     DEFAULT_ELEVATION = -10
 
-    STARTING_MAPFILE = os.path.join(os.path.dirname(__file__), "maps/initial.json")
+    STARTING_MAPFILE = os.path.join(os.path.dirname(__file__), "maps/Hatchery.json")
 
     # a robot can see all locations within a euclidean distance of their vision radius (<=)
     VISION_RADIUS = {

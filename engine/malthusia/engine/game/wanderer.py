@@ -45,6 +45,12 @@ class Wanderer:
         if new_loc.robot is not None:
             raise RobotError(f"Occupied space: attempted to move to {(new_loc.x, new_loc.y)}, which is occupied.")
 
+        if new_loc.elevation - old_loc.elevation > GameConstants.MOVE_ELEVATION_THRESHOLD:
+            raise RobotError(f"Current location {(old_loc.x, old_loc.y)} is below new location {(new_loc.x, new_loc.y)} by more than the allowed threshold of {GameConstants.MOVE_ELEVATION_THRESHOLD}.")
+
+        if new_loc.water:
+            raise NotImplementedError # should die!!!
+
         self.robot.x = new_x
         self.robot.y = new_y
 

@@ -25,7 +25,6 @@ def turn():
     except Exception as e:
         log(e)
 
-
     mem = get_last_memory_usage()
     log(f"last memory usage: {mem}")
     bytecode = get_bytecode()

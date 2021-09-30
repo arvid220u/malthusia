@@ -74,7 +74,7 @@ All robots will have these:
 
 - `check_location(x, y)`: returns a `LocationInfo` object, or throws a `RobotError` if outside the vision range
 - `get_location()`: returns a `(x, y)` tuple of the robot's location.
-- `move(direction)`: moves one step in the specified direction (which is of type `Direction`)
+- `move(direction)`: moves one step in the specified direction (which is of type `Direction`), but it can only climb at most 10 units of elevation up (and fall any elevation down)
 
 #### Landscaper methods
 

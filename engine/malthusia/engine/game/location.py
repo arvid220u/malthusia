@@ -9,6 +9,7 @@ class LocationInfo(NamedTuple):
     x: int
     y: int
     elevation: int
+    water: bool
     occupied: bool
 
 
@@ -20,6 +21,7 @@ class InternalLocation(NamedTuple):
     x: int
     y: int
     elevation: int
+    water: bool
     robot: Optional[Robot]
     dead_robots: List[Robot]
 
@@ -34,6 +36,7 @@ class InternalLocation(NamedTuple):
         return InternalLocation(x=self.x if "x" not in kwargs else kwargs["x"],
                                 y=self.y if "y" not in kwargs else kwargs["y"],
                                 elevation=self.elevation if "elevation" not in kwargs else kwargs["elevation"],
+                                water=self.water if "water" not in kwargs else kwargs["water"],
                                 robot=self.robot if "robot" not in kwargs else kwargs["robot"],
                                 dead_robots=self.dead_robots if "dead_robots" not in kwargs else kwargs["dead_robots"])
 
@@ -41,4 +44,4 @@ class InternalLocation(NamedTuple):
         return self._asdict()
 
     def to_location_info(self):
-        return LocationInfo(x=self.x, y=self.y, elevation=self.elevation, occupied=self.robot is not None)
+        return LocationInfo(x=self.x, y=self.y, elevation=self.elevation, water=self.water, occupied=self.robot is not None)

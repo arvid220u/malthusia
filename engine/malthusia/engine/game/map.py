@@ -5,7 +5,7 @@ import json
 
 
 def default_location(x, y):
-    return InternalLocation(x, y, GameConstants.DEFAULT_ELEVATION, None, [])
+    return InternalLocation(x=x, y=y, elevation=GameConstants.DEFAULT_ELEVATION, water=True, robot=None, dead_robots=[])
 
 
 class Map:
