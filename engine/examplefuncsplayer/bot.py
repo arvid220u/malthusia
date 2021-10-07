@@ -1,83 +1,31 @@
-
 from malthusia.stubs import *
+
 
 # This is an example bot written by the developers!
 # Use this to help write your own code, or run it against your bot to see how well you can do!
-
-DEBUG = 1
-def dlog(str):
-    if DEBUG > 0:
-        log(str)
-
-i = 0
-
-def check_space_wrapper(r, c, board_size):
-    # check space, except doesn't hit you with game errors
-    if r < 0 or c < 0 or c >= board_size or r >= board_size:
-        return False
-    try:
-        return check_space(r, c)
-    except:
-        return None
 
 def turn():
     """
     MUST be defined for robot to run
     This function will be called at the beginning of every turn and should contain the bulk of your robot commands
     """
-    dlog('Starting Turn!')
-    board_size = get_board_size()
+    x, y = get_location()
+    log(f"my location: {(x, y)}")
+    move(Direction.EAST)
+    x, y = get_location()
+    log(f"my location: {(x, y)}")
 
-    l = [1,3,2]
-    l = sorted(l)
-    dlog(l)
+    info = check_location(x+2,y+1)
+    log(f"loc info: {info}")
+    info = check_location(x,y)
+    log(f"loc info: {info}")
+    try:
+        info = check_location(x+5,y+1)
+        log(f"loc info: {info}")
+    except Exception as e:
+        log(e)
 
-    team = get_team()
-    opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
-    dlog('Team: ' + str(team))
-
-    robottype = get_type()
-    dlog('Type: ' + str(robottype))
-
-    if robottype == RobotType.PAWN:
-        row, col = get_location()
-        dlog('My location is: ' + str(row) + ' ' + str(col))
-
-        if team == Team.WHITE:
-            forward = 1
-        else:
-            forward = -1
-
-        # try catpuring pieces
-        if check_space_wrapper(row + forward, col + 1, board_size) == opp_team: # up and right
-            capture(row + forward, col + 1)
-            dlog('Captured at: (' + str(row + forward) + ', ' + str(col + 1) + ')')
-
-        elif check_space_wrapper(row + forward, col - 1, board_size) == opp_team: # up and left
-            capture(row + forward, col - 1)
-            dlog('Captured at: (' + str(row + forward) + ', ' + str(col - 1) + ')')
-
-        # otherwise try to move forward
-        elif row + forward != -1 and row + forward != board_size and not check_space_wrapper(row + forward, col, board_size):
-            #               ^  not off the board    ^            and    ^ directly forward is empty
-            move_forward()
-            dlog('Moved forward!')
-
-    else:
-        if team == Team.WHITE:
-            index = 0
-        else:
-            index = board_size - 1
-
-        for _ in range(board_size):
-            global i
-            if not check_space(index, i):
-                spawn(index, i)
-                i += 1
-                i = i % board_size
-                dlog('Spawned unit at: (' + str(index) + ', ' + str(i) + ')')
-                break
-
+    mem = get_last_memory_usage()
+    log(f"last memory usage: {mem}")
     bytecode = get_bytecode()
-    dlog('Done! Bytecode left: ' + str(bytecode))
-
+    log(f"bytecode remaining: {bytecode}")

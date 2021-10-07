@@ -1,90 +1,70 @@
 import random
-from .robot import Robot
-from .team import Team
+import logging
+import base64
+
+from .robot import Robot, RobotError
 from .robottype import RobotType
 from .constants import GameConstants
 from ..container.runner import RobotRunner
+from .commonrobot import CommonRobot
+from .wanderer import Wanderer
+from .map import Map
+from ..container.code_container import CodeContainer
+from .direction import Direction
+from .location import LocationInfo
+
+logger = logging.getLogger(__name__)
+
+
+def new_uid():
+    return base64.b64encode(random.randbytes(64)).decode("utf-8")
 
 
 class Game:
 
-    def __init__(self, code, board_size=GameConstants.BOARD_SIZE, max_rounds=GameConstants.MAX_ROUNDS, 
-                 seed=GameConstants.DEFAULT_SEED, sensor_radius=2, debug=False, colored_logs=True):
+    def __init__(self, map_file=GameConstants.STARTING_MAPFILE, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
         random.seed(seed)
-
-        self.code = code
 
         self.debug = debug
         self.colored_logs = colored_logs
-        self.running = True
-        self.winner = None
 
-        self.robot_count = 0
-        self.queue = {}
-        self.leaders = []
+        self.queue = [] # invariant: all alive robots are here; there may be newly killed robots here too
+        self.dead_robots = [] # invariant: all robots here are dead; all dead robots are here
 
-        self.sensor_radius = sensor_radius
-        self.board_size = board_size
-        self.board = [[None] * self.board_size for _ in range(self.board_size)]
+        self.map = Map.from_file(map_file)
+
         self.round = 0
-        self.max_rounds = max_rounds
 
-        self.lords = []
-        self.new_robot(None, None, Team.WHITE, RobotType.OVERLORD)
-        self.new_robot(None, None, Team.BLACK, RobotType.OVERLORD)
-
-        self.board_states = []
+        self.map_states = []
 
         if self.debug:
             self.log_info(f'Seed: {seed}')
 
     def turn(self):
-        if self.running:
-            self.round += 1
+        self.round += 1
 
-            if self.round > self.max_rounds:
-                self.check_over()
+        if self.debug:
+            self.log_info(f'Turn {self.round}')
+            self.log_info(f'Queue: {self.queue}')
 
-            if self.debug:
-                self.log_info(f'Turn {self.round}')
-                self.log_info(f'Queue: {self.queue}')
-                self.log_info(f'Lords: {self.lords}')
+        # invariants: we never remove from the queue while iterating here;
+        #             we may add to the end (robot spawn other robot), which is why we are not using iterators
+        i = 0
+        while i < len(self.queue):
+            robot = self.queue[i]
+            # this robot may have been killed
+            if robot.alive:
+                robot.turn()
+            i += 1
 
-            for i in range(self.robot_count):
-                if i in self.queue:
-                    robot = self.queue[i]
-                    robot.turn()
+        # invariant: we never change the queue while iterating here
+        newqueue = []
+        for robot in self.queue:
+            if robot.alive:
+                newqueue.append(robot)
+        self.queue = newqueue
 
-                    if not robot.alive:
-                        self.delete_robot(i)
-                    self.check_over()
-
-            if self.running:
-                for robot in self.lords:
-                    robot.turn()
-                    if not robot.alive:
-                        # TODO: what happens if HQ dies?
-                        raise NotImplementedError("HQ DIES")
-
-                self.lords.reverse()  # the HQ's will alternate spawn order
-                self.board_states.append([row[:] for row in self.board])
-        else:
-            raise GameError('game is over')
-
-    def delete_robot(self, i):
-        robot = self.queue[i]
-        self.board[robot.row][robot.col] = None
-        robot.kill()
-        del self.queue[i]
-
-    def serialize(self):
-        def serialize_robot(robot):
-            if robot is None:
-                return None
-
-            return {'id': robot.id, 'team': robot.team, 'health': robot.health, 'logs': robot.logs[:]}
-
-        return [[serialize_robot(c) for c in r] for r in self.board]
+        self.map_states.append(self.map.serialize())
 
     def log_info(self, msg):
         if self.colored_logs:
@@ -92,378 +72,68 @@ class Game:
         else:
             print(f'[Game info] {msg}')
 
-    def check_over(self):
-        winner = False
+    def new_robot_xy(self):
+        # generate a random location in [-100,100]x[-100,100], making sure the location is free
+        sz = 100
+        max_tries = sz*sz*5
+        i = 0
+        while i < max_tries:
+            x, y = random.randint(-sz, sz), random.randint(-sz, sz)
+            if self.map.spawnable(x, y):
+                return x, y
+            i += 1
+        raise GameError(f"Cannot spawn robot; no spawnable location found after {max_tries} tries.")
 
-        white, black = 0, 0
-        for col in range(self.board_size):
-            if self.board[0][col] and self.board[0][col].team == Team.BLACK: black += 1
-            if self.board[self.board_size - 1][col] and self.board[self.board_size - 1][col].team == Team.WHITE: white += 1
+    def new_robot(self, creator: str, code: CodeContainer, robot_type: RobotType):
+        uid = new_uid()
+        x, y = self.new_robot_xy()
 
-        if black >= (self.board_size + 1) // 2:
-            winner = True
+        def kill_robot_callback(robot):
+            assert not robot.alive
+            self.map.remove_robot(robot)
+            self.dead_robots.append(robot)
 
-        if white >= (self.board_size + 1) // 2:
-            winner = True
+        robot = Robot(x, y, uid, creator, robot_type, kill_robot_callback)
 
-        if self.round > self.max_rounds:
-            winner = True
-
-        if winner:
-            if white == black:
-                tie = True
-                for r in range(1, self.board_size):
-                    if tie:
-                        w, b = 0, 0
-                        for c in range(self.board_size):
-                            if self.board[r][c] and self.board[r][c].team == Team.BLACK: b += 1
-                            if self.board[self.board_size - r - 1][c] and self.board[self.board_size - r - 1][c].team == Team.WHITE: w += 1
-                        if w == b: continue
-                        self.winner = Team.WHITE if w > b else Team.BLACK
-                        tie = False
-                if tie:
-                    self.winner = random.choice([Team.WHITE, Team.BLACK])
-            else:
-                self.winner = Team.WHITE if white > black else Team.BLACK
-            self.running = False
-
-        if not self.running:
-            self.board_states.append([row[:] for row in self.board])
-            self.process_over()
-
-    def process_over(self):
-        """
-        Helper method to process once a game is finished (e.g. deleting robots)
-        """
-        for i in range(self.robot_count):
-            if i in self.queue:
-                self.delete_robot(i)
-
-
-    def new_robot(self, row, col, team, robot_type):
-        if robot_type == RobotType.OVERLORD:
-            id = f'{team.name} HQ'
-        else:
-            id = self.robot_count
-        robot = Robot(row, col, team, id, robot_type)
-
-        shared_methods = {
+        methods = {
             'GameError': GameError,
             'RobotType': RobotType,
             'RobotError': RobotError,
             'GameConstants': GameConstants,
-            'Team': Team,
-            'get_board_size': lambda : self.get_board_size(),
-            'get_bytecode' : lambda : robot.runner.bytecode,
-            'get_last_memory_usage' : lambda : robot.runner.last_memory_usage,
-            'get_team': lambda : self.get_team(robot),
-            'get_type': lambda: self.get_type(robot),
+            'Direction': Direction,
+            'LocationInfo': LocationInfo,
         }
 
-        if robot_type == RobotType.OVERLORD:
-            methods = {
-                'check_space': lambda row, col: self.hq_check_space(row, col),
-                'get_board': lambda : self.get_board(),
-                'spawn': lambda row, col: self.spawn(robot, row, col)
-            }
+        logger.debug(methods)
+
+        def wrapper_method(modelrobot, method, *args):
+            logger.debug(method)
+            RobotRunner.validate_arguments(*args, error_type=RobotRunner)
+            return getattr(modelrobot, method)(*args)
+
+        def wrap_methods(modelrobot):
+            wrapped_methods = {}
+            for method in [m for m in dir(modelrobot) if callable(getattr(modelrobot, m)) and not m.startswith("_")]:
+                logger.debug(method)
+                logger.debug(type(method))
+                wrapped_methods[method] = (lambda modelrobot, method: lambda *args: wrapper_method(modelrobot, method, *args))(modelrobot, method)
+            logger.debug(wrapped_methods)
+            return wrapped_methods
+
+        methods.update(wrap_methods(CommonRobot(self, robot)))
+        logger.debug(methods)
+
+        if robot_type == RobotType.WANDERER:
+            methods.update(wrap_methods(Wanderer(self, robot)))
         else:
-            methods = {
-                'capture': lambda row, col: self.capture(robot, row, col),
-                'check_space': lambda row, col: self.pawn_check_space(robot, row, col),
-                'get_location': lambda : self.get_location(robot),
-                'move_forward': lambda: self.move_forward(robot),
-                'sense': lambda : self.sense(robot)
-            }
+            raise NotImplementedError
 
-        methods.update(shared_methods)
+        logger.debug(methods)
 
-        robot.animate(self.code[team.value], methods, debug=self.debug)
+        robot.animate(code, methods, debug=self.debug)
 
-        if robot_type == RobotType.PAWN:
-            self.queue[self.robot_count] = robot
-            self.board[row][col] = robot
-        else:
-            self.lords.append(robot)
-
-        self.robot_count += 1
-
-    def is_on_board(self, row, col):
-        if 0 <= row < self.board_size and 0 <= col < self.board_size:
-            return True
-        return False
-
-
-    #### SHARED METHODS ####
-
-    def get_board_size(self):
-        """
-        @HQ_METHOD, @PAWN_METHOD
-
-        Return the size of the board (int)
-        """
-        RobotRunner.validate_arguments(error_type=RobotError)
-
-        return self.board_size
-
-    def get_team(self, robot):
-        """
-        @HQ_METHOD, @PAWN_METHOD
-
-        Return the current robot's team (Team.WHITE or Team.BLACK)
-        """
-        RobotRunner.validate_arguments(robot, error_type=RobotError)
-
-        return robot.team
-
-    def get_type(self, robot):
-        """
-        @HQ_METHOD, @PAWN_METHOD
-
-        Return the type of the unit - either RobotType.PAWN or RobotType.OVERLORD
-        """
-        RobotRunner.validate_arguments(robot, error_type=RobotError)
-
-        return robot.type
-
-
-    #### HQ METHODS ####
-
-    def get_board(self):
-        """
-        @HQ_METHOD
-
-        Return the current state of the board as an array of Team.WHITE, Team.BLACK, and None, representing white-occupied,
-        black-occupied, and empty squares, respectively.
-        """
-        RobotRunner.validate_arguments(error_type=RobotError)
-
-        board = [[None] * self.board_size for _ in range(self.board_size)]
-
-        for i in range(self.board_size):
-            for j in range(self.board_size):
-                if self.board[i][j]:
-                    board[i][j] = self.board[i][j].team
-
-        return board
-
-    def hq_check_space(self, row, col):
-        """
-        @HQ_METHOD
-
-        Checks whether a specific board space is occupied and if yes returns the team of the robot occupying the space;
-        otherwise returns False. Pawns have a similar method but can only see within their sensory radius
-        """
-        RobotRunner.validate_arguments(row, col, error_type=RobotError)
-
-        if not self.is_on_board(row, col):
-            raise RobotError('you cannot check a space that is not on the board')
-        if not self.board[row][col]:
-            return False
-        return self.board[row][col].team
-
-    def spawn(self, robot, row, col):
-        """
-        @HQ_METHOD
-
-        Spawns a pawn at the given location. Pawns can only be spawned at the edge of the board on your side of the board.
-        Only the HQ can spawn units, and it can only spawn one unit per turn.
-        :loc should be given as a tuple (row, col), the space to spawn on
-        """
-        RobotRunner.validate_arguments(robot, row, col, error_type=RobotError)
-
-        if robot.has_moved:
-            raise RobotError('you have already spawned a unit this turn')
-
-        if (robot.team == Team.WHITE and row != 0) or (robot.team == Team.BLACK and row != self.board_size - 1):
-            raise RobotError('you can only spawn in the end row of your side of the board')
-
-        if not self.is_on_board(row, col):
-            raise RobotError('you cannot spawn a unit on a space that is not on the board')
-
-        if self.board[row][col]:
-            raise RobotError('you cannot spawn a unit on a space that is already occupied')
-
-        self.new_robot(row, col, robot.team, RobotType.PAWN)
-        robot.has_moved = True
-
-
-    #### PAWN METHODS ####
-
-    def capture(self, robot, new_row, new_col):
-        """
-        @PAWN_METHOD
-
-        Diagonally capture an enemy piece.
-        :new_row, new_col the position of the enemy to capture.
-        Units can only capture enemy pieces that are located diagonally left or right in front of them on the board.
-        """
-        RobotRunner.validate_arguments(robot, new_row, new_col, error_type=RobotError)
-
-        if robot.has_moved:
-            raise RobotError('this unit has already moved this turn; robots can only move once per turn')
-
-        row, col = robot.row, robot.col
-
-        if self.board[row][col] != robot:
-            raise RobotError
-
-        if not self.is_on_board(new_row, new_col):
-            raise RobotError('you cannot capture a space that is not on the board')
-
-        if not self.board[new_row][new_col]:
-            raise RobotError('you cannot capture an empty space')
-
-        if self.board[new_row][new_col].team == robot.team:
-            raise RobotError('you cannot capture your own piece')
-
-        if abs(col - new_col) != 1:
-            raise RobotError('you must capture diagonally')
-
-        if (robot.team == Team.WHITE and row - new_row != -1) or (robot.team == Team.BLACK and row - new_row != 1):
-            raise RobotError('you must capture diagonally forwards')
-
-        captured_robot = self.board[new_row][new_col]
-
-        self.delete_robot(captured_robot.id)
-        self.board[row][col] = None
-
-        robot.row = new_row
-        robot.col = new_col
-
-        self.board[new_row][new_col] = robot
-        robot.has_moved = True
-
-    def get_location(self, robot):
-        """
-        @PAWN_METHOD
-
-        Return the current location of the robot
-        """
-        RobotRunner.validate_arguments(robot, error_type=RobotError)
-
-        row, col = robot.row, robot.col
-        if self.board[row][col] != robot:
-            raise RobotError('something went wrong; please contact the devs')
-        return row, col
-
-    def move_forward(self, robot):
-        """
-        @PAWN_METHOD
-
-        Move the current unit forward. A unit can only be moved if there is no unit already occupying the space.
-        """
-        RobotRunner.validate_arguments(robot, error_type=RobotError)
-
-        if robot.has_moved:
-            raise RobotError('this unit has already moved this turn; robots can only move once per turn')
-
-        row, col = robot.row, robot.col
-        if self.board[row][col] != robot:
-            raise RobotError('something went wrong; please contact the devs')
-
-        if robot.team == Team.WHITE:
-            new_row, new_col = row + 1, col
-        else:
-            new_row, new_col = row - 1, col
-
-        if not self.is_on_board(new_row, new_col):
-            raise RobotError('you cannot move to a space that is not on the board')
-
-        if self.board[new_row][new_col]:
-            raise RobotError('you cannot move to a space that is already occupied')
-
-        self.board[row][col] = None
-
-        robot.row = new_row
-        robot.col = new_col
-        self.board[new_row][new_col] = robot
-        robot.has_moved = True
-
-    def pawn_check_space(self, robot, row, col):
-        """
-        @PAWN_METHOD
-
-        Checks whether a specific board space is occupied and if yes returns the team of the robot occupying the space;
-        otherwise returns False.
-
-        Raises a RobotError if the space is not within the sensory radius
-
-        HQs have a similar method but can see the full board
-        """
-        RobotRunner.validate_arguments(robot, row, col, error_type=RobotError)
-
-        if self.board[robot.row][robot.col] != robot:
-            raise RobotError('something went wrong; please contact the devs')
-
-        if not self.is_on_board(row, col):
-            raise RobotError('you cannot check a space that is not on the board')
-        drow, dcol = abs(robot.row - row), abs(robot.col - col)
-        if max(drow, dcol) > 2:
-            raise RobotError('that space is not within sensory radius of this robot')
-
-        if not self.board[row][col]:
-            return False
-        return self.board[row][col].team
-
-    def sense(self, robot):
-        """
-        @PAWN_METHOD
-
-        Sense nearby units; returns a list of tuples of the form (row, col, robot.team) within sensor radius of this robot (excluding yourself)
-        You can sense another unit other if it is within sensory radius of you; e.g. max(|robot.x - other.x|, |robot.y - other.y|) <= sensory_radius
-        """
-        RobotRunner.validate_arguments(robot, error_type=RobotError)
-
-        row, col = robot.row, robot.col
-
-        robots = []
-
-        for i in range(-self.sensor_radius, self.sensor_radius + 1):
-            for j in range(-self.sensor_radius, self.sensor_radius + 1):
-                if i == 0 and j == 0:
-                    continue
-
-                new_row, new_col = row + i, col + j
-                if not self.is_on_board(new_row, new_col):
-                    continue
-
-                if self.board[new_row][new_col]:
-                    robots.append((new_row, new_col, self.board[new_row][new_col].team))
-
-        return robots
-
-
-    #### DEBUG METHODS: NOT AVAILABLE DURING CONTEST ####
-
-    def view_board(self, colors=True):
-        """
-        @DEBUG_METHOD
-        THIS METHOD IS NOT AVAILABLE DURING ACTUAL GAMES.
-
-        Helper method that displays the full board as a human-readable string.
-        """
-        board = ''
-        for i in range(self.board_size):
-            for j in range(self.board_size):
-                if self.board[i][j]:
-                    board += '['
-                    if colors:
-                        if self.board[i][j].team == Team.WHITE:
-                            board += '\033[1m\u001b[37m'
-                        else:
-                            board += '\033[1m\u001b[36m'
-                    board += str(self.board[i][j])
-                    if colors:
-                        board += '\033[0m\u001b[0m] '
-                else:
-                    board += '[    ] '
-            board += '\n'
-        return board
-
-
-class RobotError(Exception):
-    """Raised for illegal robot inputs"""
-    pass
+        self.queue.append(robot)
+        self.map.add_robot(robot, x, y)
 
 
 class GameError(Exception):
