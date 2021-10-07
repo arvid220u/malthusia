@@ -5,6 +5,7 @@ from .direction import Direction
 from .robot import RobotError
 from .robottype import RobotType
 from .constants import GameConstants
+from ..container.runner import RobotDied
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +49,6 @@ class Wanderer:
         if new_loc.elevation - old_loc.elevation > GameConstants.MOVE_ELEVATION_THRESHOLD:
             raise RobotError(f"Current location {(old_loc.x, old_loc.y)} is below new location {(new_loc.x, new_loc.y)} by more than the allowed threshold of {GameConstants.MOVE_ELEVATION_THRESHOLD}.")
 
-        if new_loc.water:
-            raise NotImplementedError # should die!!!
-
         self.robot.x = new_x
         self.robot.y = new_y
 
@@ -58,3 +56,6 @@ class Wanderer:
         self.game.map.update_location(old_loc.x, old_loc.y, robot=None)
 
         self.robot.has_moved = True
+
+        if new_loc.water:
+            raise RobotDied("Walked into water... robots cant swim :(")

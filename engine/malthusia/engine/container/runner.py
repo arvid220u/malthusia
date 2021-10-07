@@ -21,6 +21,9 @@ class OutOfBytecode(Exception):
 class RobotRunnerError(Exception):
     pass
 
+class RobotDied(Exception):
+    pass
+
 class RobotRunnerConfig:
 
     def __init__(self, starting_bytecode, bytecode_per_turn, max_bytecode, chess_clock_mechanism,
@@ -80,6 +83,7 @@ class RobotRunner:
                       'PendingDeprecationWarning',
                       'RecursionError',
                       'ReferenceError',
+                      'RobotDied',
                       'RuntimeError',
                       'RuntimeWarning',
                       'StopIteration',
@@ -134,6 +138,7 @@ class RobotRunner:
         self.globals['__builtins__']['type'] = type
         self.globals['__builtins__']['sum'] = sum
         self.globals['__builtins__']['OutOfBytecode'] = OutOfBytecode
+        self.globals['__builtins__']['RobotDied'] = RobotDied
         self.globals['__builtins__']['range'] = range
         self.globals['__builtins__']['list'] = list
         self.globals['__builtins__']['tuple'] = tuple
@@ -407,7 +412,7 @@ class RobotRunner:
             exec(self.code['bot'], self.globals, locals)
             self.globals.update(locals) # we need to update the globals with the locals in the module space, because later we are just calling the turn function
             self.initialized = True
-        except (KeyboardInterrupt, SystemError, OSError, SystemExit, MemoryError):
+        except (KeyboardInterrupt, SystemError, OSError, SystemExit, MemoryError, RobotDied):
             raise
         except:
             self.report_error()
@@ -419,7 +424,7 @@ class RobotRunner:
         if 'turn' in self.globals and isinstance(self.globals['turn'], type(lambda: 1)):
             try:
                 exec(self.globals['turn'].__code__, self.globals, {})
-            except (KeyboardInterrupt, SystemError, OSError, SystemExit, MemoryError):
+            except (KeyboardInterrupt, SystemError, OSError, SystemExit, MemoryError, RobotDied):
                 raise
             except:
                 self.report_error()

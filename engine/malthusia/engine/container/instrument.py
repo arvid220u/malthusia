@@ -28,7 +28,7 @@ class Instrument:
     (1) Call __instrument__ before each user instruction (which increments the bytecode counter)
     (2) Modify the code in other ways, e.g. by reraising dangerous exceptions
     """
-    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit", "OutOfBytecode"]
+    DANGEROUS_EXCEPTIONS = ["RecursionError", "MemoryError", "KeyboardInterrupt", "OSError", "SystemError", "SystemExit", "OutOfBytecode", "RobotDied"]
 
     @staticmethod
     def reraise_dangerous_exceptions(instructions, names, consts, stacksize):
