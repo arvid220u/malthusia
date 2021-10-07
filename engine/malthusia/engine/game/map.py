@@ -55,7 +55,10 @@ class Map:
         return cls.from_list(l)
 
     def remove_robot(self, robot):
-        raise NotImplementedError
+        assert not robot.alive
+        new_dead_robots = self.get_location(robot.x, robot.y).dead_robots
+        new_dead_robots.append(robot)
+        self.update_location(robot.x, robot.y, robot=None, dead_robots=new_dead_robots)
 
     def add_robot(self, robot, x, y):
         """

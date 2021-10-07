@@ -3,21 +3,30 @@ from ..container.runner import RobotRunnerConfig
 from ..container.runner import RobotRunnerError
 from .robottype import RobotType
 from .constants import GameConstants
+from ..config import DEBUG
 
 
 class Robot:
 
-    def __init__(self, x, y, id: str, creator: str, type: RobotType):
+    def __init__(self, x, y, id: str, creator: str, type: RobotType, kill_robot_callback):
         self.id = id
         self.type = type
         self.creator = creator
         self.x = x
         self.y = y
         self.has_moved = False
+        self.kill_robot_callback = kill_robot_callback
 
         self.runner = None
         self.debug = False
         self.alive = False
+
+        self.check_rep()
+
+    def check_rep(self):
+        if not DEBUG:
+            return
+        assert (self.alive and self.runner is not None) or (not self.alive and self.runner is None)
 
     def animate(self, code, methods, debug=False):
         config = RobotRunnerConfig(starting_bytecode=0, bytecode_per_turn=GameConstants.BYTECODE_PER_TURN,
@@ -27,10 +36,16 @@ class Robot:
         self.debug = debug
         self.alive = True
 
+        self.check_rep()
+
     def kill(self):
         self.runner.kill()
         del self.runner
         self.alive = False
+
+        self.kill_robot_callback(self)
+
+        self.check_rep()
 
     def log(self, msg):
         if not self.debug:
@@ -67,6 +82,8 @@ class Robot:
         except RobotRunnerError as e:
             self.fatal_error(str(e))
             self.kill()
+
+        self.check_rep()
 
     def __str__(self):
         type = str(self.type)[0]

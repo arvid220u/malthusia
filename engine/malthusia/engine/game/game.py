@@ -28,10 +28,8 @@ class Game:
         self.debug = debug
         self.colored_logs = colored_logs
 
-        self.robot_count = 0
-        # TODO: ideally use an ordered map (e.g. a red-black tree or something similar)
-        self.queue = {}
-        self.dead_robots = []
+        self.queue = [] # invariant: all alive robots are here; there may be newly killed robots here too
+        self.dead_robots = [] # invariant: all robots here are dead; all dead robots are here
 
         self.map = Map.from_file(map_file)
 
@@ -49,22 +47,24 @@ class Game:
             self.log_info(f'Turn {self.round}')
             self.log_info(f'Queue: {self.queue}')
 
-        for i in range(self.robot_count):
-            if i in self.queue:
-                robot = self.queue[i]
+        # invariants: we never remove from the queue while iterating here;
+        #             we may add to the end (robot spawn other robot), which is why we are not using iterators
+        i = 0
+        while i < len(self.queue):
+            robot = self.queue[i]
+            # this robot may have been killed
+            if robot.alive:
                 robot.turn()
+            i += 1
 
-                if not robot.alive:
-                    self.delete_robot(i)
+        # invariant: we never change the queue while iterating here
+        newqueue = []
+        for robot in self.queue:
+            if robot.alive:
+                newqueue.append(robot)
+        self.queue = newqueue
 
         self.map_states.append(self.map.serialize())
-
-    def delete_robot(self, i):
-        robot = self.queue[i]
-        self.map.delete_robot(robot)
-        robot.kill()
-        del self.queue[i]
-        self.dead_robots.append(robot)
 
     def log_info(self, msg):
         if self.colored_logs:
@@ -87,7 +87,13 @@ class Game:
     def new_robot(self, creator: str, code: CodeContainer, robot_type: RobotType):
         uid = new_uid()
         x, y = self.new_robot_xy()
-        robot = Robot(x, y, uid, creator, robot_type)
+
+        def kill_robot_callback(robot):
+            assert not robot.alive
+            self.map.remove_robot(robot)
+            self.dead_robots.append(robot)
+
+        robot = Robot(x, y, uid, creator, robot_type, kill_robot_callback)
 
         methods = {
             'GameError': GameError,
@@ -126,10 +132,8 @@ class Game:
 
         robot.animate(code, methods, debug=self.debug)
 
-        self.queue[self.robot_count] = robot
+        self.queue.append(robot)
         self.map.add_robot(robot, x, y)
-
-        self.robot_count += 1
 
 
 class GameError(Exception):
