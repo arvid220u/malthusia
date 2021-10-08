@@ -2,17 +2,17 @@ import { useCallback, useRef, useEffect, useState } from "react";
 import * as PIXI from "pixi.js";
 
 function Map() {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // On first render create our application
     const app = new PIXI.Application({
-      resizeTo: ref.current,
+      resizeTo: ref.current!,
       backgroundColor: 0xffaaaa,
     });
 
     // Add app to DOM
-    ref.current.appendChild(app.view);
+    ref.current!.appendChild(app.view);
 
     // Start the PixiJS app
     app.start();
@@ -23,7 +23,7 @@ function Map() {
     };
   }, []);
 
-  return <div ref={ref} class="flex flex-grow flex-shrink h-40"></div>;
+  return <div ref={ref} className="flex flex-grow flex-shrink h-40"></div>;
 }
 
 export default Map;
