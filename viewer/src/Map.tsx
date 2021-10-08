@@ -1,5 +1,6 @@
 import { useCallback, useRef, useEffect, useState } from "react";
 import * as PIXI from "pixi.js";
+import { setup_map } from "./game";
 
 function Map() {
   const ref = useRef<HTMLDivElement>(null);
@@ -8,6 +9,7 @@ function Map() {
     // On first render create our application
     const app = new PIXI.Application({
       resizeTo: ref.current!,
+      resolution: devicePixelRatio,
       backgroundColor: 0xffaaaa,
     });
 
@@ -16,6 +18,8 @@ function Map() {
 
     // Start the PixiJS app
     app.start();
+
+    setup_map(app, {size: 40}, ref.current!)
 
     return () => {
       // On unload completely destroy the application and all of it's children
