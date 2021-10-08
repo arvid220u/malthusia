@@ -3,6 +3,7 @@ import argparse
 import faulthandler
 import sys
 import threading
+import json
 
 from malthusia import CodeContainer, Game, BasicViewer, GameConstants, RobotType
 
@@ -61,11 +62,20 @@ def play_all(delay=0.8, keep_history=False, real_time=False):
         while True:
             game.turn()
     finally:
+        if replay_file is not None:
+            save_replay()
         if real_time:
             viewer_poison_pill.set()
             viewer_thread.join()
         else:
             viewer.play(delay=delay, keep_history=keep_history)
+
+
+def save_replay(f = None):
+    if f is None:
+        f = replay_file
+    with open(f, "w") as ff:
+        json.dump(game.map_states, ff)
 
 
 if __name__ == '__main__':
@@ -79,6 +89,7 @@ if __name__ == '__main__':
     parser.add_argument('--map-file', default=None, help="Path to map file")
     parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int, help="Override the seed used for random.")
     parser.add_argument('--view-box', default=10, help="max coordinate value in viewer")
+    parser.add_argument('-o', '--output-file', default=None, help="Output file! A json replay file.")
     args = parser.parse_args()
     args.debug = args.debug == 'true'
 
@@ -90,6 +101,8 @@ if __name__ == '__main__':
     game_args = {}
     if args.map_file is not None:
         game_args["map_file"] = args.map_file
+
+    replay_file = args.output_file
 
     # This is how you initialize a game,
     game = Game(seed=args.seed, debug=args.debug, colored_logs=not args.raw_text, **game_args)
@@ -109,6 +122,6 @@ if __name__ == '__main__':
 
     else:
         # print out help message!
-        print("Run step() to step through the game.")
+        print("Run step() to step through the game. To save a replay, call save_replay().")
         print("You also have access to the variables: game, viewer")
 
