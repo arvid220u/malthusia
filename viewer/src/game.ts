@@ -2,21 +2,47 @@ import * as PIXI from "pixi.js";
 
 // external graphics
 const GRID_SIZE = 13;
-const GRID_SPACING = 2;
+const GRID_SPACING = 1;
+const WATER_COLOR = 0x0000ff;
 
 // internal graphics
 const MAX_SPRITES_PER_TYPE = 1000;
 
-export function setup_map(app, game, container) {
+type Game = {
+    current_round: number,
+    map: Location[],
+}
+type Location = {
+    x: number,
+    y: number,
+    elevation: number,
+    water: boolean,
+    robot: Robot | null,
+    dead_robots: Robot[],
+}
+type Robot = {
+    id: number,
+    type: string,
+    creator: string,
+    x: number,
+    y: number,
+    alive: boolean
+}
+
+type Viewer = {
+    graphics: PIXI.Graphics
+}
+
+export function setup_map(app, container): Viewer {
     // grid container so we can zoom and move around
     const grid = new PIXI.Container();
     app.stage.addChild(grid);
 
     // initialize graphics object
     const background = new PIXI.Graphics();
-    // background.beginFill(0xffffff);
-    // background.drawRect(-1000,-1000,(GRID_SIZE+GRID_SPACING)*game.size+1000,(GRID_SIZE+GRID_SPACING)*game.size+1000);
-    // background.endFill();
+    background.beginFill(WATER_COLOR);
+    background.drawRect(-10000,-10000,20000,20000);
+    background.endFill();
     grid.addChild(background);
 
     const dyn_graphics = new PIXI.Graphics();
@@ -119,27 +145,53 @@ export function setup_map(app, game, container) {
         grid.position.y -= (py * (zoom_amount - 1));
     });
 
-
-    // TEST: TODO REMOVE
-    draw_grid(graphics, game);
+    return {
+        graphics
+    }
 }
 
-function draw_grid(graphics, game) {
-    graphics.clear();
+export function draw_grid(game: Game, viewer: Viewer) {
+    viewer.graphics.clear();
 
     // render tiles
-    for (var y = 0; y < game.size; ++y) {
-        for (var x = 0; x < game.size; ++x) {
-            // determine tile color
-            graphics.beginFill(0x111111);
+    for (const location of game.map) {
+        // determine tile color
+        viewer.graphics.beginFill(0x111111);
 
-            // calculate grid position
-            var gx = x * (GRID_SIZE + GRID_SPACING);
-            var gy = y * (GRID_SIZE + GRID_SPACING);
+        // calculate grid position
+        var gx = location.x * (GRID_SIZE + GRID_SPACING);
+        var gy = location.y * (GRID_SIZE + GRID_SPACING);
 
-            // draw it
-            graphics.drawRect(gx,gy,GRID_SIZE,GRID_SIZE);
-            graphics.endFill();
-        }
+        // draw it
+        viewer.graphics.drawRect(gx,gy,GRID_SIZE,GRID_SIZE);
+        viewer.graphics.endFill();
+
     }
+}
+
+// load replay
+// TODO: add FROM index here!! so that we can get state of the world from a particular round on.
+export async function load_replay() {
+    console.log('loading_replay')
+    const resp = await fetch('/replay')
+    if (resp.ok) {
+        const data = await resp.json();
+        return process_replay(data);
+    } else {
+        console.error('no replay file');
+    }
+}
+
+
+function process_replay(replay: any) {
+    console.log('process');
+
+    const seed = 0;
+
+    let game: Game = {
+        current_round: 0,
+        map: replay
+    };
+
+    return game;
 }

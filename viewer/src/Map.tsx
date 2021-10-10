@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect, useState } from "react";
 import * as PIXI from "pixi.js";
-import { setup_map } from "./game";
+import { setup_map, load_replay, draw_grid } from "./game";
 
 function Map() {
   const ref = useRef<HTMLDivElement>(null);
@@ -19,7 +19,12 @@ function Map() {
     // Start the PixiJS app
     app.start();
 
-    setup_map(app, {size: 40}, ref.current!)
+    const viewer = setup_map(app, ref.current!);
+    load_replay().then(function(game) {
+      if (game) {
+        draw_grid(game, viewer);
+      }
+    })
 
     return () => {
       // On unload completely destroy the application and all of it's children
