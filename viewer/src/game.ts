@@ -451,30 +451,6 @@ export function draw_grid(viewer: Viewer) {
       sprite.position.x = gx;
       sprite.position.y = gy;
       sprite.tint = 0xff0000;
-
-      // display robot health in tile border
-      //   var health_percentage = Math.max(
-      //     robot.health / SPECS.UNITS[robot.unit].STARTING_HP,
-      //     0
-      //   );
-
-      //   if (health_percentage < 1) {
-      //     // make space
-      //     sprite.width = GRID_SIZE * 0.8;
-      //     sprite.height = GRID_SIZE * 0.8;
-      //     sprite.position = new PIXI.Point(gx + GRID_SIZE * 0.1, gy);
-
-      //     this.unit_health.beginFill(0xff0000);
-      //     var gx = robot.x * (GRID_SIZE + GRID_SPACING);
-      //     var gy = robot.y * (GRID_SIZE + GRID_SPACING);
-      //     this.unit_health.drawRect(
-      //       gx,
-      //       gy + GRID_SIZE * 0.8,
-      //       GRID_SIZE * health_percentage,
-      //       GRID_SIZE * 0.2
-      //     );
-      //     this.unit_health.endFill();
-      //   }
     }
 
     // draw it
