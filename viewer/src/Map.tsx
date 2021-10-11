@@ -1,34 +1,22 @@
 import { useCallback, useRef, useEffect, useState } from "react";
-import * as PIXI from "pixi.js";
 import { setup_map, load_replay, draw_grid } from "./game";
+import G from "./globals";
 
 function Map() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // On first render create our application
-    const app = new PIXI.Application({
-      resizeTo: ref.current!,
-      resolution: devicePixelRatio,
-      backgroundColor: 0xffaaaa,
-    });
-
-    // Add app to DOM
-    ref.current!.appendChild(app.view);
-
-    // Start the PixiJS app
-    app.start();
-
-    const viewer = setup_map(app, ref.current!);
-    load_replay().then(function(game) {
+    G.viewer = setup_map(ref.current!, G.render_callbacks);
+    load_replay().then(function (game) {
       if (game) {
-        draw_grid(game, viewer);
+        G.viewer!.game = game;
+        draw_grid(G.viewer!);
       }
-    })
+    });
 
     return () => {
       // On unload completely destroy the application and all of it's children
-      app.destroy(true, true);
+      G.viewer!.app.destroy(true, true);
     };
   }, []);
 
