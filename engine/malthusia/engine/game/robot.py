@@ -109,7 +109,7 @@ class Robot:
     def serialize(self):
         return {
             "id": self.id,
-            "type": str(self.type),
+            "type": self.type.value,
             "creator": self.creator,
             "x": self.x,
             "y": self.y,
