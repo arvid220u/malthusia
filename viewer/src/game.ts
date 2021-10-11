@@ -304,9 +304,9 @@ function dirt_color(x: number): number {
   }
 
   let now = [0, 0, 0];
-  for (let i = 0; i < 3; i++) now[i] = (hi[i] - lo[i]) * t + lo[i];
+  for (let i = 0; i < 3; i++) now[i] = Math.round((hi[i] - lo[i]) * t + lo[i]);
 
-  let hx = now[0] * 0x10000 + now[1] * 0x100 + now[0];
+  let hx = now[0] * 0x10000 + now[1] * 0x100 + now[2];
   return hx;
 }
 
