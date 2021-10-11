@@ -41,7 +41,10 @@ class InternalLocation(NamedTuple):
                                 dead_robots=self.dead_robots if "dead_robots" not in kwargs else kwargs["dead_robots"])
 
     def serialize(self):
-        return self._asdict()
+        d = self._asdict()
+        d["robot"] = d["robot"].serialize() if d["robot"] is not None else None
+        d["dead_robots"] = [r.serialize() for r in d["dead_robots"]]
+        return d
 
     def to_location_info(self):
         return LocationInfo(x=self.x, y=self.y, elevation=self.elevation, water=self.water, occupied=self.robot is not None)

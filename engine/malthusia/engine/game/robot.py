@@ -106,6 +106,16 @@ class Robot:
         t = str(self.type)
         return f'<ROBOT {self.id} ({t})>'
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "type": self.type.value,
+            "creator": self.creator,
+            "x": self.x,
+            "y": self.y,
+            "alive": self.alive,
+        }
+
 
 class RobotError(Exception):
     """Raised for illegal robot inputs"""

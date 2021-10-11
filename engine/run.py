@@ -3,6 +3,7 @@ import argparse
 import faulthandler
 import sys
 import threading
+import json
 
 from malthusia import CodeContainer, Game, BasicViewer, GameConstants, RobotType
 
@@ -44,14 +45,14 @@ def step(number_of_turns=1):
         # viewer.view()
 
 
-def play_all(delay=0.8, keep_history=False, real_time=False):
+def play_all(delay=0.8, keep_history=False, real_time=False, viewer=False):
     """
     This function plays the entire game, and views it in a nice animated way.
 
     If played in real time, make sure that the game does not print anything.
     """
 
-    if real_time:
+    if real_time and viewer:
         viewer_poison_pill = threading.Event()
         viewer_thread = threading.Thread(target=viewer.play_synchronized, args=(viewer_poison_pill,), kwargs={'delay': delay, 'keep_history': keep_history})
         viewer_thread.daemon = True
@@ -61,11 +62,20 @@ def play_all(delay=0.8, keep_history=False, real_time=False):
         while True:
             game.turn()
     finally:
-        if real_time:
+        if replay_file is not None:
+            save_replay()
+        if real_time and viewer:
             viewer_poison_pill.set()
             viewer_thread.join()
-        else:
+        elif viewer:
             viewer.play(delay=delay, keep_history=keep_history)
+
+
+def save_replay(f = None):
+    if f is None:
+        f = replay_file
+    with open(f, "w") as ff:
+        json.dump(game.map_states, ff)
 
 
 if __name__ == '__main__':
@@ -79,6 +89,8 @@ if __name__ == '__main__':
     parser.add_argument('--map-file', default=None, help="Path to map file")
     parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int, help="Override the seed used for random.")
     parser.add_argument('--view-box', default=10, help="max coordinate value in viewer")
+    parser.add_argument('--viewer', default=False, help="whether to show viewer")
+    parser.add_argument('-o', '--output-file', default=None, help="Output file! A json replay file.")
     args = parser.parse_args()
     args.debug = args.debug == 'true'
 
@@ -90,6 +102,8 @@ if __name__ == '__main__':
     game_args = {}
     if args.map_file is not None:
         game_args["map_file"] = args.map_file
+
+    replay_file = args.output_file
 
     # This is how you initialize a game,
     game = Game(seed=args.seed, debug=args.debug, colored_logs=not args.raw_text, **game_args)
@@ -105,10 +119,10 @@ if __name__ == '__main__':
     # Here we check if the script is run using the -i flag.
     # If it is not, then we simply play the entire game.
     if not sys.flags.interactive:
-        play_all(delay = float(args.delay), keep_history = args.raw_text, real_time = not args.debug)
+        play_all(delay = float(args.delay), keep_history = args.raw_text, real_time = not args.debug, viewer = args.viewer)
 
     else:
         # print out help message!
-        print("Run step() to step through the game.")
+        print("Run step() to step through the game. To save a replay, call save_replay().")
         print("You also have access to the variables: game, viewer")
 
