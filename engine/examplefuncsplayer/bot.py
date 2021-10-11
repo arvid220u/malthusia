@@ -1,8 +1,10 @@
 from malthusia.stubs import *
+import random
 
 
 # This is an example bot written by the developers!
 # Use this to help write your own code, or run it against your bot to see how well you can do!
+dirs = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
 
 def turn():
     """
@@ -11,7 +13,7 @@ def turn():
     """
     x, y = get_location()
     log(f"my location: {(x, y)}")
-    move(Direction.EAST)
+    move(dirs[random.randint(0,3)])
     x, y = get_location()
     log(f"my location: {(x, y)}")
 
