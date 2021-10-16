@@ -3,6 +3,7 @@ from fakedb import FakeDB
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi.responses import StreamingResponse
 import json
 
 RATE_LIMIT = 100
@@ -26,8 +27,12 @@ app.add_middleware(
 )
 
 
+async def followfile(fname: string):
+    yield "hi"
+
+
 @app.get("/replay")
-def replay():
+async def replay():
     with open("../engine/replay.json", "r") as f:
         d = json.load(f)
-    return d
+    return StreamingResponse(followfile("../engine/replay.gz"), media_type="application/replay")
