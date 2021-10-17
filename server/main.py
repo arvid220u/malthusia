@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.responses import StreamingResponse
 import json
+import asyncio
 
 RATE_LIMIT = 100
 
@@ -27,12 +28,15 @@ app.add_middleware(
 )
 
 
-async def followfile(fname: string):
-    yield "hi"
+async def followfile(fname: str):
+    proc = await asyncio.create_subprocess_exec(
+        "tail", "-F", fname, stdout=asyncio.subprocess.PIPE
+    )
+    while True:
+        bs = await proc.stdout.read(n=1000)
+        yield bs
 
 
 @app.get("/replay")
 async def replay():
-    with open("../engine/replay.json", "r") as f:
-        d = json.load(f)
     return StreamingResponse(followfile("../engine/replay.gz"), media_type="application/replay")
