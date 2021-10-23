@@ -1,21 +1,12 @@
-from ratelimiter import RateLimiter
-from fakedb import FakeDB
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.responses import StreamingResponse
-import json
 import asyncio
-
-RATE_LIMIT = 100
 
 load_dotenv()
 
-db = FakeDB()
-
 app = FastAPI()
-
-rl = RateLimiter(db, RATE_LIMIT)
 
 origins = ["http://localhost", "http://localhost:3000", "https://malthusia.art"]
 
