@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import AsyncBlockingQueue from "async-blocking-queue";
 
 // external graphics
 const GRID_SIZE = 13;
@@ -17,10 +18,12 @@ const DIRT_COLORS: Map<number, Array<number>> = new Map<number, Array<number>>([
 // internal graphics
 const MAX_SPRITES_PER_TYPE = 1000;
 const N_TYPES = 1;
+const AUTOPLAY_DELAY = 100;
 const TYPE_NAME = ["WANDERER"];
 
 type Game = {
   current_round: number;
+  round_offset: number;
   max_rounds: number;
   map_states: Location[][];
 };
@@ -406,7 +409,11 @@ function stop_autoplay(viewer: Viewer) {
 }
 
 export function draw_grid(viewer: Viewer) {
-  if (!viewer.game) {
+  if (
+    !viewer.game ||
+    viewer.game?.max_rounds <=
+      viewer.game.current_round - viewer.game.round_offset
+  ) {
     return;
   }
   viewer.graphics.clear();
@@ -422,7 +429,9 @@ export function draw_grid(viewer: Viewer) {
   for (let i = 0; i < N_TYPES; ++i) sprite_index[i] = 0;
 
   // render tiles
-  for (const location of viewer.game.map_states[viewer.game.current_round]) {
+  for (const location of viewer.game.map_states[
+    viewer.game.current_round - viewer.game.round_offset
+  ]) {
     // determine tile color
     if (location.water) {
       viewer.graphics.beginFill(WATER_COLOR);
@@ -451,30 +460,6 @@ export function draw_grid(viewer: Viewer) {
       sprite.position.x = gx;
       sprite.position.y = gy;
       sprite.tint = 0xff0000;
-
-      // display robot health in tile border
-      //   var health_percentage = Math.max(
-      //     robot.health / SPECS.UNITS[robot.unit].STARTING_HP,
-      //     0
-      //   );
-
-      //   if (health_percentage < 1) {
-      //     // make space
-      //     sprite.width = GRID_SIZE * 0.8;
-      //     sprite.height = GRID_SIZE * 0.8;
-      //     sprite.position = new PIXI.Point(gx + GRID_SIZE * 0.1, gy);
-
-      //     this.unit_health.beginFill(0xff0000);
-      //     var gx = robot.x * (GRID_SIZE + GRID_SPACING);
-      //     var gy = robot.y * (GRID_SIZE + GRID_SPACING);
-      //     this.unit_health.drawRect(
-      //       gx,
-      //       gy + GRID_SIZE * 0.8,
-      //       GRID_SIZE * health_percentage,
-      //       GRID_SIZE * 0.2
-      //     );
-      //     this.unit_health.endFill();
-      //   }
     }
 
     // draw it
@@ -485,28 +470,98 @@ export function draw_grid(viewer: Viewer) {
 
 // load replay
 // TODO: add FROM index here!! so that we can get state of the world from a particular round on.
-export async function load_replay() {
+export async function load_replay(round_processer) {
   console.log("loading_replay");
   // const resp = await fetch('/replay')
   const url = process.env.REACT_APP_API_URL + "/replay";
   const resp = await fetch(url);
   if (resp.ok) {
-    const data = await resp.json();
-    return process_replay(data);
+    console.log("resp ok");
+    const reader = await resp.body?.getReader();
+    let readBuffer = new Uint8Array();
+    let sawBuffer = false;
+    let decoder = new TextDecoder();
+    let seen34s = 0;
+    while (true) {
+      const red = await reader?.read();
+      if (!red || red.done) {
+        console.log("DONE");
+        return;
+      }
+      let start_i = 0;
+      for (let i = 0; i < red.value.length; i++) {
+        if (red.value[i] === 34) {
+          seen34s++;
+        } else {
+          seen34s = 0;
+        }
+        if (seen34s === 4) {
+          if (!sawBuffer) {
+            sawBuffer = true;
+            seen34s = 0;
+          } else {
+            let newBuffer = new Uint8Array(readBuffer.length + i + 1 - start_i);
+            newBuffer.set(readBuffer, 0);
+            newBuffer.set(red.value.slice(start_i, i + 1), readBuffer.length);
+            const round_json = JSON.parse(
+              decoder.decode(newBuffer.slice(4, newBuffer.length - 4))
+            );
+            round_processer(round_json);
+            sawBuffer = false;
+            seen34s = 0;
+            start_i = i + 1;
+            readBuffer = new Uint8Array();
+          }
+        }
+      }
+      if (start_i === 0) {
+        let newBuffer = new Uint8Array(readBuffer.length + red.value.length);
+        newBuffer.set(readBuffer, 0);
+        newBuffer.set(red.value, readBuffer.length);
+        readBuffer = newBuffer;
+      } else {
+        readBuffer = red.value.slice(start_i);
+      }
+    }
   } else {
     console.error("no replay file");
   }
 }
 
-function process_replay(replay: any) {
-  console.log("process");
-  console.log(replay);
+async function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export function process_rounds(viewer: Viewer) {
+  const queue = new AsyncBlockingQueue();
 
   const game: Game = {
     current_round: 0,
-    map_states: replay,
-    max_rounds: replay.length,
+    map_states: [],
+    max_rounds: 0,
+    round_offset: 0,
+  };
+  viewer.game = game;
+
+  const round_processer = (round_dict) => {
+    queue.enqueue(round_dict);
   };
 
-  return game;
+  const round_displayer = async () => {
+    while (true) {
+      const next_round = await queue.dequeue();
+      viewer.game!.map_states = [next_round.map];
+      viewer.game!.current_round = next_round.round;
+      viewer.game!.max_rounds = 1;
+      viewer.game!.round_offset = next_round.round;
+      render(viewer);
+      await wait(AUTOPLAY_DELAY);
+    }
+  };
+
+  round_displayer();
+
+  return round_processer;
 }

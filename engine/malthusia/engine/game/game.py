@@ -22,7 +22,7 @@ def new_uid():
 
 class Game:
 
-    def __init__(self, map_file=GameConstants.STARTING_MAPFILE, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True):
+    def __init__(self, map_file=GameConstants.STARTING_MAPFILE, seed=GameConstants.DEFAULT_SEED, debug=False, colored_logs=True, round_callback=None):
         random.seed(seed)
 
         self.debug = debug
@@ -35,7 +35,7 @@ class Game:
 
         self.round = 0
 
-        self.map_states = []
+        self.round_callback = round_callback
 
         if self.debug:
             self.log_info(f'Seed: {seed}')
@@ -64,7 +64,14 @@ class Game:
                 newqueue.append(robot)
         self.queue = newqueue
 
-        self.map_states.append(self.map.serialize())
+        if self.round_callback is not None:
+            self.round_callback(self.serialize_round())
+
+    def serialize_round(self):
+        return {
+            "round": self.round,
+            "map": self.map.serialize(),
+        }
 
     def log_info(self, msg):
         if self.colored_logs:

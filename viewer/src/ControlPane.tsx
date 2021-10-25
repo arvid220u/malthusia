@@ -1,5 +1,4 @@
 import G from "./globals";
-import { start_autoplay } from "./game";
 import { useEffect, useState } from "react";
 
 function ControlPane() {
@@ -15,12 +14,6 @@ function ControlPane() {
   }, []);
   return (
     <div className="p-1">
-      <button
-        onClick={() => G.viewer && start_autoplay(G.viewer)}
-        className="bg-blue-500 hover:bg-blue-700 text-white px-4 rounded"
-      >
-        start autoplay!
-      </button>{" "}
       current round: {round}. location: ({hover_coord[0]}, {hover_coord[1]})
     </div>
   );

@@ -1,11 +1,20 @@
-import time
 import argparse
 import faulthandler
 import sys
 import threading
+import gzip
 import json
+import os
+import errno
 
 from malthusia import CodeContainer, Game, BasicViewer, GameConstants, RobotType
+
+def silentremove(filename):
+    try:
+        os.remove(filename)
+    except OSError as e: # this would be "except OSError, e:" before Python 2.6
+        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+            raise # re-raise exception if a different error occurred
 
 """
 This is a simple script for running bots and debugging them.
@@ -36,13 +45,10 @@ Usage:
 def step(number_of_turns=1):
     """
     This function steps through the game the specified number of turns.
-
-    It prints the state of the game after every turn.
     """
 
     for i in range(number_of_turns):
         game.turn()
-        # viewer.view()
 
 
 def play_all(delay=0.8, keep_history=False, real_time=False, viewer=False):
@@ -62,8 +68,6 @@ def play_all(delay=0.8, keep_history=False, real_time=False, viewer=False):
         while True:
             game.turn()
     finally:
-        if replay_file is not None:
-            save_replay()
         if real_time and viewer:
             viewer_poison_pill.set()
             viewer_thread.join()
@@ -71,11 +75,18 @@ def play_all(delay=0.8, keep_history=False, real_time=False, viewer=False):
             viewer.play(delay=delay, keep_history=keep_history)
 
 
-def save_replay(f = None):
-    if f is None:
-        f = replay_file
-    with open(f, "w") as ff:
-        json.dump(game.map_states, ff)
+# the round delimiter is a string that can never appear inside a valid JSON file.
+# each round will start and end with this string
+ROUND_PADDING = '""""'
+
+
+def replay_saver(serialized_map):
+    # TODO: fail more nicely on ctrl-c (dont wanna corrupt the file)
+    if replay_file is not None:
+        with open(replay_file, "a") as f:
+            f.write(ROUND_PADDING)
+            json.dump(serialized_map, f)
+            f.write(ROUND_PADDING)
 
 
 if __name__ == '__main__':
@@ -90,7 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int, help="Override the seed used for random.")
     parser.add_argument('--view-box', default=10, help="max coordinate value in viewer")
     parser.add_argument('--viewer', default=False, help="whether to show viewer")
-    parser.add_argument('-o', '--output-file', default=None, help="Output file! A json replay file.")
+    parser.add_argument('-o', '--output-file', default=None, help="Output file! A gzipped json replay file that will be streamed to.")
     args = parser.parse_args()
     args.debug = args.debug == 'true'
 
@@ -104,17 +115,20 @@ if __name__ == '__main__':
         game_args["map_file"] = args.map_file
 
     replay_file = args.output_file
+    if replay_file is not None:
+        # overwrite the replay file
+        silentremove(replay_file)
 
     # This is how you initialize a game,
-    game = Game(seed=args.seed, debug=args.debug, colored_logs=not args.raw_text, **game_args)
+    game = Game(seed=args.seed, debug=args.debug, colored_logs=not args.raw_text, round_callback=replay_saver, **game_args)
 
     for player in args.player:
         code = CodeContainer.from_directory(player)
         game.new_robot(player, code, RobotType.WANDERER)
     
     # ... and the viewer.
-    view_box = (-args.view_box, args.view_box, args.view_box, -args.view_box)
-    viewer = BasicViewer(view_box, game.map_states, colors=not args.raw_text)
+    # view_box = (-args.view_box, args.view_box, args.view_box, -args.view_box)
+    # viewer = BasicViewer(view_box, game.map_states, colors=not args.raw_text)
 
     # Here we check if the script is run using the -i flag.
     # If it is not, then we simply play the entire game.
@@ -123,6 +137,6 @@ if __name__ == '__main__':
 
     else:
         # print out help message!
-        print("Run step() to step through the game. To save a replay, call save_replay().")
+        print("Run step() to step through the game.")
         print("You also have access to the variables: game, viewer")
 

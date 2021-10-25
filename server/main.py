@@ -1,19 +1,12 @@
-from ratelimiter import RateLimiter
-from fakedb import FakeDB
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import json
-
-RATE_LIMIT = 100
+from fastapi.responses import StreamingResponse
+import asyncio
 
 load_dotenv()
 
-db = FakeDB()
-
 app = FastAPI()
-
-rl = RateLimiter(db, RATE_LIMIT)
 
 origins = ["http://localhost", "http://localhost:3000", "https://malthusia.art"]
 
@@ -26,8 +19,28 @@ app.add_middleware(
 )
 
 
+# TODO: start from a specific offset
+async def followfile(fname: str):
+    proc = await asyncio.create_subprocess_exec(
+        "tail", "-c", "+0", "-F", fname, stdout=asyncio.subprocess.PIPE
+    )
+    N = 100_000
+    wait_timeout = 5
+    while True:
+        try:
+            bs = await asyncio.wait_for(proc.stdout.read(n=N), wait_timeout)
+        except asyncio.exceptions.TimeoutError:
+            bs = b""
+        if len(bs) == 0:
+            break
+        else:
+            yield bs
+
+    proc.terminate()
+
+
 @app.get("/replay")
-def replay():
-    with open("../engine/replay.json", "r") as f:
-        d = json.load(f)
-    return d
+async def replay():
+    # we cannot simply set Content-Encoding: gzip, because our replay file format is several gzips concatenated together
+    # while this is okay by the original gzip standard, it is not okay by most browsers...
+    return StreamingResponse(followfile("../engine/replay.gz"), media_type="application/replay")#, headers={"Content-Encoding": "gzip"})
