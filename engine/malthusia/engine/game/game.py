@@ -65,7 +65,13 @@ class Game:
         self.queue = newqueue
 
         if self.round_callback is not None:
-            self.round_callback(self.map.serialize())
+            self.round_callback(self.serialize_round())
+
+    def serialize_round(self):
+        return {
+            "round": self.round,
+            "map": self.map.serialize(),
+        }
 
     def log_info(self, msg):
         if self.colored_logs:

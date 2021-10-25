@@ -83,7 +83,7 @@ ROUND_PADDING = '""""'
 def replay_saver(serialized_map):
     # TODO: fail more nicely on ctrl-c (dont wanna corrupt the file)
     if replay_file is not None:
-        with gzip.open(replay_file, 'at', encoding="ascii") as f:
+        with open(replay_file, "a") as f:
             f.write(ROUND_PADDING)
             json.dump(serialized_map, f)
             f.write(ROUND_PADDING)

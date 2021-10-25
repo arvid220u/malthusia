@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect, useState } from "react";
-import { setup_map, load_replay, draw_grid } from "./game";
+import { setup_map, load_replay, process_rounds } from "./game";
 import G from "./globals";
 
 function Map() {
@@ -7,12 +7,8 @@ function Map() {
 
   useEffect(() => {
     G.viewer = setup_map(ref.current!, G.render_callbacks);
-    load_replay().then(function (game) {
-      if (game) {
-        G.viewer!.game = game;
-        draw_grid(G.viewer!);
-      }
-    });
+    const round_processer = process_rounds(G.viewer!);
+    load_replay(round_processer);
 
     return () => {
       // On unload completely destroy the application and all of it's children

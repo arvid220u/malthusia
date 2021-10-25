@@ -19,15 +19,28 @@ app.add_middleware(
 )
 
 
+# TODO: start from a specific offset
 async def followfile(fname: str):
     proc = await asyncio.create_subprocess_exec(
-        "tail", "-F", fname, stdout=asyncio.subprocess.PIPE
+        "tail", "-c", "+0", "-F", fname, stdout=asyncio.subprocess.PIPE
     )
+    N = 100_000
+    wait_timeout = 5
     while True:
-        bs = await proc.stdout.read(n=1000)
-        yield bs
+        try:
+            bs = await asyncio.wait_for(proc.stdout.read(n=N), wait_timeout)
+        except asyncio.exceptions.TimeoutError:
+            bs = b""
+        if len(bs) == 0:
+            break
+        else:
+            yield bs
+
+    proc.terminate()
 
 
 @app.get("/replay")
 async def replay():
-    return StreamingResponse(followfile("../engine/replay.gz"), media_type="application/replay")
+    # we cannot simply set Content-Encoding: gzip, because our replay file format is several gzips concatenated together
+    # while this is okay by the original gzip standard, it is not okay by most browsers...
+    return StreamingResponse(followfile("../engine/replay.gz"), media_type="application/replay")#, headers={"Content-Encoding": "gzip"})
