@@ -1,5 +1,7 @@
 import os, argparse
 
+from malthusia import CodeContainer
+
 
 def dir_filify(folder_name, dirfile_name):
     # Try to read contents of folder_name
@@ -26,24 +28,12 @@ def dir_filify(folder_name, dirfile_name):
         with open(location) as f:
             code[os.path.basename(location)] = f.read()
 
-    dirfile = directory_dict_to_dirfile(code)
+    dirfile = CodeContainer.directory_dict_to_dirfile(code)
 
     with open(dirfile_name, "w") as f:
         f.write(dirfile)
 
     print('Success! Upload {} through the online portal'.format(dirfile_name))
-
-
-def directory_dict_to_dirfile(dirdict):
-    dirfile = ""
-    for idx, file in enumerate(dirdict):
-        if idx > 0:
-            dirfile += "\n"
-        num_lines = len(dirdict[file].strip("\n").split("\n"))
-        separator = "=============="
-        dirfile += f"{file}, {num_lines} lines\n" + separator + "\n"
-        dirfile += dirdict[file].strip("\n") + "\n" + separator + "\n"
-    return dirfile
 
 
 if __name__ == '__main__':

@@ -2,12 +2,11 @@ import argparse
 import faulthandler
 import sys
 import threading
-import gzip
 import json
 import os
 import errno
 
-from malthusia import CodeContainer, Game, BasicViewer, GameConstants, RobotType
+from malthusia import CodeContainer, Game, GameConstants, RobotType
 
 
 def silentremove(filename):
@@ -96,13 +95,13 @@ if __name__ == '__main__':
 
     # This is just for parsing the input to the script. Not important.
     parser = argparse.ArgumentParser()
-    parser.add_argument('player', nargs='+', help="Path to a folder containing a bot.py file.")
     parser.add_argument('--raw-text', action='store_true',
                         help="Makes playback text-only by disabling colors and cursor movements.")
     parser.add_argument('--delay', default=0.8, help="Playback delay in seconds.")
     parser.add_argument('--debug', default='true', choices=('true', 'false'),
                         help="In debug mode (defaults to true), bot logs and additional information are displayed.")
     parser.add_argument('--map-file', default=None, help="Path to map file")
+    parser.add_argument('--action-file', default="actions.jsonl", help="Path to action file")
     parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int,
                         help="Override the seed used for random.")
     parser.add_argument('--view-box', default=10, help="max coordinate value in viewer")
@@ -127,7 +126,8 @@ if __name__ == '__main__':
         silentremove(replay_file)
 
     # This is how you initialize a game,
-    game = Game(seed=args.seed, debug=args.debug, colored_logs=not args.raw_text, round_callback=replay_saver,
+    game = Game(args.action_file, seed=args.seed, debug=args.debug, colored_logs=not args.raw_text,
+                round_callback=replay_saver,
                 **game_args)
 
     for player in args.player:

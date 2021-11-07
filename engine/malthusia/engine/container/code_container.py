@@ -16,6 +16,34 @@ class CodeContainer:
         self.code = code
 
     @classmethod
+    def directory_dict_to_dirfile(cls, dirdict):
+        dirfile = ""
+        for idx, file in enumerate(dirdict):
+            if idx > 0:
+                dirfile += "\n"
+            num_lines = len(dirdict[file].strip("\n").split("\n"))
+            separator = "=============="
+            dirfile += f"{file}, {num_lines} lines\n" + separator + "\n"
+            dirfile += dirdict[file].strip("\n") + "\n" + separator + "\n"
+        return dirfile
+
+    @classmethod
+    def dirfile_to_directory_dict(cls, dirfile):
+        dirdict = {}
+        lines = dirfile.split("\n")
+        i = 0
+        while i < len(lines):
+            name = lines[i].split(" ")[0].rstrip(",")
+            nlines = int(lines[i].split(" ")[1])
+            filelines = []
+            for j in range(i + 2, i + 2 + nlines):
+                filelines.append(lines[j])
+            file = "\n".join(filelines)
+            dirdict[name] = file
+            i = i + 2 + nlines + 2
+        return dirdict
+
+    @classmethod
     def from_directory_dict(cls, dic):
         code = {}
 
@@ -27,8 +55,15 @@ class CodeContainer:
         return cls(code)
 
     @classmethod
+    def from_dirfile(cls, dirfile):
+        directory_dict = cls.dirfile_to_directory_dict(dirfile)
+
+        return cls.from_directory_dict(directory_dict)
+
+    @classmethod
     def from_directory(cls, dirname):
-        files = [os.path.abspath(os.path.join(dirname,f)) for f in os.listdir(dirname) if f[-3:] == '.py' and os.path.isfile(os.path.join(dirname, f))]
+        files = [os.path.abspath(os.path.join(dirname, f)) for f in os.listdir(dirname) if
+                 f[-3:] == '.py' and os.path.isfile(os.path.join(dirname, f))]
 
         code = {}
         for location in files:
