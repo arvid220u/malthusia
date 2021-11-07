@@ -130,10 +130,6 @@ if __name__ == '__main__':
                 round_callback=replay_saver,
                 **game_args)
 
-    for player in args.player:
-        code = CodeContainer.from_directory(player)
-        game.new_robot(player, code, RobotType.WANDERER)
-
     # ... and the viewer.
     # view_box = (-args.view_box, args.view_box, args.view_box, -args.view_box)
     # viewer = BasicViewer(view_box, game.map_states, colors=not args.raw_text)

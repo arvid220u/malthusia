@@ -49,7 +49,7 @@ class Game:
     def check_actions(self):
         with open(self.action_file, "r") as f:
             f.seek(self.action_file_offset)
-            for l in f.readline():
+            for l in f.readlines():
                 action = json.loads(l)
                 self.process_action(action)
             self.action_file_offset = f.tell()
@@ -58,9 +58,9 @@ class Game:
     def process_action(self, action):
         if "type" not in action:
             raise GameError(f"Action object does not have a type attribute: {action}")
-        if "round" not in action or action["round"] is not int:
+        if "round" not in action or type(action["round"]) is not int:
             raise GameError(f"Action object does not have a valid round attribute: {action}")
-        if action["start_round"] < self.round:
+        if action["round"] < self.round:
             # if this happens we are screwed
             raise GameError(
                 f"We received action from the past. This is not good. We need to rerun everything. Action: {action}")
