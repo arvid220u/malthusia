@@ -2,19 +2,20 @@ import argparse
 import faulthandler
 import sys
 import threading
-import gzip
 import json
 import os
 import errno
 
-from malthusia import CodeContainer, Game, BasicViewer, GameConstants, RobotType
+from malthusia import CodeContainer, Game, GameConstants, RobotType
+
 
 def silentremove(filename):
     try:
         os.remove(filename)
-    except OSError as e: # this would be "except OSError, e:" before Python 2.6
-        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
-            raise # re-raise exception if a different error occurred
+    except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+        if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+            raise  # re-raise exception if a different error occurred
+
 
 """
 This is a simple script for running bots and debugging them.
@@ -60,7 +61,8 @@ def play_all(delay=0.8, keep_history=False, real_time=False, viewer=False):
 
     if real_time and viewer:
         viewer_poison_pill = threading.Event()
-        viewer_thread = threading.Thread(target=viewer.play_synchronized, args=(viewer_poison_pill,), kwargs={'delay': delay, 'keep_history': keep_history})
+        viewer_thread = threading.Thread(target=viewer.play_synchronized, args=(viewer_poison_pill,),
+                                         kwargs={'delay': delay, 'keep_history': keep_history})
         viewer_thread.daemon = True
         viewer_thread.start()
 
@@ -93,20 +95,24 @@ if __name__ == '__main__':
 
     # This is just for parsing the input to the script. Not important.
     parser = argparse.ArgumentParser()
-    parser.add_argument('player', nargs='+', help="Path to a folder containing a bot.py file.")
-    parser.add_argument('--raw-text', action='store_true', help="Makes playback text-only by disabling colors and cursor movements.")
+    parser.add_argument('--raw-text', action='store_true',
+                        help="Makes playback text-only by disabling colors and cursor movements.")
     parser.add_argument('--delay', default=0.8, help="Playback delay in seconds.")
-    parser.add_argument('--debug', default='true', choices=('true','false'), help="In debug mode (defaults to true), bot logs and additional information are displayed.")
+    parser.add_argument('--debug', default='true', choices=('true', 'false'),
+                        help="In debug mode (defaults to true), bot logs and additional information are displayed.")
     parser.add_argument('--map-file', default=None, help="Path to map file")
-    parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int, help="Override the seed used for random.")
+    parser.add_argument('--action-file', default="actions.jsonl", help="Path to action file")
+    parser.add_argument('--seed', default=GameConstants.DEFAULT_SEED, type=int,
+                        help="Override the seed used for random.")
     parser.add_argument('--view-box', default=10, help="max coordinate value in viewer")
     parser.add_argument('--viewer', default=False, help="whether to show viewer")
-    parser.add_argument('-o', '--output-file', default=None, help="Output file! A gzipped json replay file that will be streamed to.")
+    parser.add_argument('-o', '--output-file', default=None,
+                        help="Output file! A gzipped json replay file that will be streamed to.")
     args = parser.parse_args()
     args.debug = args.debug == 'true'
 
     # The faulthandler makes certain errors (segfaults) have nicer stacktraces.
-    faulthandler.enable() 
+    faulthandler.enable()
 
     # This is where the interesting things start!
 
@@ -120,12 +126,10 @@ if __name__ == '__main__':
         silentremove(replay_file)
 
     # This is how you initialize a game,
-    game = Game(seed=args.seed, debug=args.debug, colored_logs=not args.raw_text, round_callback=replay_saver, **game_args)
+    game = Game(args.action_file, seed=args.seed, debug=args.debug, colored_logs=not args.raw_text,
+                round_callback=replay_saver,
+                **game_args)
 
-    for player in args.player:
-        code = CodeContainer.from_directory(player)
-        game.new_robot(player, code, RobotType.WANDERER)
-    
     # ... and the viewer.
     # view_box = (-args.view_box, args.view_box, args.view_box, -args.view_box)
     # viewer = BasicViewer(view_box, game.map_states, colors=not args.raw_text)
@@ -133,10 +137,9 @@ if __name__ == '__main__':
     # Here we check if the script is run using the -i flag.
     # If it is not, then we simply play the entire game.
     if not sys.flags.interactive:
-        play_all(delay = float(args.delay), keep_history = args.raw_text, real_time = not args.debug, viewer = args.viewer)
+        play_all(delay=float(args.delay), keep_history=args.raw_text, real_time=not args.debug, viewer=args.viewer)
 
     else:
         # print out help message!
         print("Run step() to step through the game.")
         print("You also have access to the variables: game, viewer")
-

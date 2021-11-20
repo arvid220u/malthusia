@@ -75,5 +75,5 @@ class Map:
         :return: true iff a robot can spawn on this location
         """
         loc = self.get_location(x, y)
-        # spawnable iff no robot is there
-        return loc.robot is None
+        # spawnable iff no robot is there, and it is not water
+        return loc.robot is None and not loc.water
