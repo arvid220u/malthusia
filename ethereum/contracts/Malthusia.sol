@@ -10,18 +10,34 @@ contract Malthusia is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
+    struct Metadata {
+        address creator;
+        uint256 robot_type;
+        uint256 start_round;
+    }
+
+    mapping(uint256 => Metadata) _metadata;
+
     constructor() ERC721("Malthusia", "MLTH") {}
 
-    function mintNFT(address recipient, string memory tokenURI)
-        public
-        returns (uint256)
-    {
+    function mintNFT(
+        address recipient,
+        string memory tokenURI,
+        uint256 robot_type
+    ) public returns (uint256) {
         _tokenIds.increment();
 
         uint256 newItemId = _tokenIds.current();
         _mint(recipient, newItemId);
         _setTokenURI(newItemId, tokenURI);
+        uint256 start_round = _getStartRound();
+        _metadata[newItemId] = Metadata(recipient, robot_type, start_round);
 
         return newItemId;
+    }
+
+    function _getStartRound() private returns (uint256) {
+        // TODO: make this use the current time, or something. is there a time oracle?
+        return 0;
     }
 }
