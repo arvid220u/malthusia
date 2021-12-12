@@ -16,7 +16,7 @@ def dir_filify(folder_name, dirfile_name):
         return
 
     # ensure there is 'bot.py' in folder_name
-    if not 'bot.py' in files:
+    if 'bot.py' not in files:
         print('It appears there is no \'bot.py\' in this folder')
         return
 
