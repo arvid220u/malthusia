@@ -11,10 +11,13 @@ import dis
 from types import CodeType
 import struct
 
+
 # inspired by https://gist.github.com/stecman/3751ac494795164efa82a683130cabe5
 def _pack_uint32(val):
     """ Convert integer to 32-bit little-endian bytes """
     return struct.pack("<I", val)
+
+
 def code_to_bytecode(code, mtime=0, source_size=0):
     """
     Serialise the passed code object (PyCodeObject*) to bytecode as a .pyc file
@@ -22,7 +25,7 @@ def code_to_bytecode(code, mtime=0, source_size=0):
     """
 
     # Get the magic number for the running Python version
-    if sys.version_info >= (3,4):
+    if sys.version_info >= (3, 4):
         from importlib.util import MAGIC_NUMBER
     else:
         import imp
@@ -37,7 +40,7 @@ def code_to_bytecode(code, mtime=0, source_size=0):
 
     # Handle extra 32-bit field in header from Python 3.7 onwards
     # See: https://www.python.org/dev/peps/pep-0552
-    if sys.version_info >= (3,7):
+    if sys.version_info >= (3, 7):
         # Blank bit field value to indicate traditional pyc header
         data.extend(_pack_uint32(0))
 
@@ -45,18 +48,22 @@ def code_to_bytecode(code, mtime=0, source_size=0):
 
     # Handle extra 32-bit field for source size from Python 3.2 onwards
     # See: https://www.python.org/dev/peps/pep-3147/
-    if sys.version_info >= (3,2):
+    if sys.version_info >= (3, 2):
         data.extend(_pack_uint32(source_size))
 
     data.extend(marshal.dumps(code))
 
     return data
 
-def main(filename: str, replace_builtins: bool = True, instrument: bool = True, instrument_binary_multiply: bool = True, reraise_dangerous_exceptions: bool = True, write_dis: bool = True):
+
+def main(filename: str, replace_builtins: bool = True, instrument: bool = True, instrument_binary_multiply: bool = True,
+         reraise_dangerous_exceptions: bool = True, write_dis: bool = True):
     with open(filename, "r") as f:
         source = f.read()
     compiled_source = compile(source, filename, "exec")
-    instrumented = Instrument.instrument(compiled_source, replace_builtins=replace_builtins, instrument=instrument, instrument_binary_multiply=instrument_binary_multiply, reraise_dangerous_exceptions=reraise_dangerous_exceptions)
+    instrumented = Instrument.instrument(compiled_source, replace_builtins=replace_builtins, instrument=instrument,
+                                         instrument_binary_multiply=instrument_binary_multiply,
+                                         reraise_dangerous_exceptions=reraise_dangerous_exceptions)
     with open(filename + "c", 'wb') as fc:
         fc.write(code_to_bytecode(instrumented))
     typer.echo(f"wrote binary instrumented code to {filename}c")
@@ -75,7 +82,7 @@ def main(filename: str, replace_builtins: bool = True, instrument: bool = True, 
     for const in instrumented.co_consts:
         if type(const) == CodeType:
             print_codetype(const)
-        
+
 
 def print_codetype(instrumented):
     print(instrumented.co_argcount)
@@ -95,6 +102,6 @@ def print_codetype(instrumented):
     print(instrumented.co_freevars)
     print(instrumented.co_cellvars)
 
+
 if __name__ == "__main__":
     typer.run(main)
-
