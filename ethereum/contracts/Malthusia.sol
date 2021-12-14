@@ -10,6 +10,8 @@ contract Malthusia is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
+    // Metadata contains everything that needs to be on-chain
+    // Additional on-chain metadata includes: tokenURI, tokenId
     struct Metadata {
         address creator;
         uint256 robot_type;

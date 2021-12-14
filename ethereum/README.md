@@ -3,10 +3,10 @@ inspiration taken from the following tutorial: https://ethereum.org/en/developer
 each NFT will contain the following data:
 
 - on-chain:
-  - UID (just the token address)
+  - UID (just the token ID)
   - creator (just the minter address)
   - robot type (on-chain because might have different costs / availabilities)
-    - need to devise forwards-compatible scheme for this! maybe have robot type be integer that directly corresponds to the cost or something?
+    - need to devise forwards-compatible scheme for this! maybe have robot type be integer that directly corresponds to the cost or something? oh interesting. yeah I like that idea. cannot update costs, sure, which is not GREAT but it is fine. oh wait I wanted some scheme where the costs are low in the beginning and then logistically grows (eventually settles on some level). maybe in usdc? nahhh.
   - round (based on current datetime or something like that)
   - tokenURI (ipfs://CID link)
 - off-chain direct metadata:
