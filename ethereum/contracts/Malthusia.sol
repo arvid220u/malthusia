@@ -15,7 +15,7 @@ contract Malthusia is ERC721URIStorage {
     struct Metadata {
         address creator;
         uint256 robot_type;
-        uint256 start_round;
+        uint256 start_block;
     }
 
     mapping(uint256 => Metadata) _metadata;
@@ -32,15 +32,17 @@ contract Malthusia is ERC721URIStorage {
         uint256 newItemId = _tokenIds.current();
         _mint(recipient, newItemId);
         _setTokenURI(newItemId, tokenURI);
-        uint256 start_round = _getStartRound();
-        _metadata[newItemId] = Metadata(recipient, robot_type, start_round);
+        uint256 start_block = _getStartBlock();
+        _metadata[newItemId] = Metadata(recipient, robot_type, start_block);
 
         return newItemId;
     }
 
-    function _getStartRound() private returns (uint256) {
-        // TODO: make this use the current time, or something. is there a time oracle?
-        return 0;
+    // _getStartBlock returns a number corresponding to when the robot is supposed to start
+    // This number will be translated by the game runner to a round, with the goal that when this contract
+    // is called, the round that this start block is translated to is in the future.
+    function _getStartBlock() private returns (uint256) {
+        return block.number;
     }
 
     function creator(uint256 tokenId) public view returns (address) {

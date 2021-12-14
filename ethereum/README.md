@@ -41,3 +41,5 @@ PRIVATE_KEY="your-metamask-private-key"
 2. hardhat has two builtin networks: `hardhat` and `localhost`. the former is recreated and killed for every new process, whereas `localhost` is a single local instance. therefore, remember to specify `--network localhost` if you want to interact with `npx hardhat node`
 
 3. https://ethereum.stackexchange.com/a/88122 tldr: non-view calls will not show return value if interacting from ethers. this is because in the real world you won't actually know the return value until it is mined. so in the real world to get the NFT id you would emit an event (ERC721 already does this, with the `Transfer` event). in ethers on a local network you can simulate an on-chain call using `callStatic`... except then it won't actually modify the contract I believe.
+
+4. special solidity variables (e.g. `block`, `msg`): https://docs.soliditylang.org/en/v0.8.10/units-and-global-variables.html#special-variables-and-functions
