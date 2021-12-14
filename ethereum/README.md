@@ -16,3 +16,18 @@ each NFT will contain the following data:
   - code (ipfs://CID link)
 - off-chain indirect code on ipfs:
   - the code in flattened format
+
+## instructions
+
+1. create a `.env` file containing: 
+
+```
+API_URL="https://eth-ropsten.alchemyapi.io/v2/your-api-key"
+PRIVATE_KEY="your-metamask-private-key"
+```
+
+(pls use a burner wallet)
+
+2. Run `npx hardhat` to do various things
+
+(note: there seems to be a problem with hardhat and node 17, do `export NODE_OPTIONS=--openssl-legacy-provider` to resolve)

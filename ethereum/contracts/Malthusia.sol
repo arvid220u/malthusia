@@ -40,4 +40,12 @@ contract Malthusia is ERC721URIStorage {
         // TODO: make this use the current time, or something. is there a time oracle?
         return 0;
     }
+
+    function creator(uint256 tokenId) public view returns (address) {
+        require(
+            _exists(tokenId),
+            "Malthusia: Creator query for nonexistent token"
+        );
+        return _metadata[tokenId].creator;
+    }
 }
