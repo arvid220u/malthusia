@@ -34,6 +34,10 @@ PRIVATE_KEY="your-metamask-private-key"
 
 3. In particular, always run `npx hardhat node` to start a new node. It will not persist state — so keep this running in the background.
 
+4. Run `npx hardhat --network localhost run scripts/deploy.js` to deploy the contract.
+
+5. Run `node scripts/mint-nft.js` to mint an NFT.
+
 ## misc useful info
 
 1. https://docs.openzeppelin.com/learn/deploying-and-interacting?pref=hardhat is a good guide
