@@ -31,3 +31,13 @@ PRIVATE_KEY="your-metamask-private-key"
 2. Run `npx hardhat` to do various things
 
 (note: there seems to be a problem with hardhat and node 17, do `export NODE_OPTIONS=--openssl-legacy-provider` to resolve)
+
+3. In particular, always run `npx hardhat node` to start a new node. It will not persist state — so keep this running in the background.
+
+## misc useful info
+
+1. https://docs.openzeppelin.com/learn/deploying-and-interacting?pref=hardhat is a good guide
+
+2. hardhat has two builtin networks: `hardhat` and `localhost`. the former is recreated and killed for every new process, whereas `localhost` is a single local instance. therefore, remember to specify `--network localhost` if you want to interact with `npx hardhat node`
+
+3. https://ethereum.stackexchange.com/a/88122 tldr: non-view calls will not show return value if interacting from ethers. this is because in the real world you won't actually know the return value until it is mined. so in the real world to get the NFT id you would emit an event (ERC721 already does this, with the `Transfer` event). in ethers on a local network you can simulate an on-chain call using `callStatic`... except then it won't actually modify the contract I believe.
