@@ -9,7 +9,7 @@ Build a map using the Google Sheets map builder.
 """
 
 from pandas.io.clipboard import clipboard_get
-from malthusia.engine.game.location import InternalLocation
+from mlth.engine.game.location import InternalLocation
 import json
 import typer
 import os
