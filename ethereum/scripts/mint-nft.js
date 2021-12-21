@@ -1,23 +1,42 @@
 require("dotenv").config();
-const API_URL = process.env.API_URL;
-const PUBLIC_KEY = process.env.PUBLIC_KEY;
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const fs = require('fs');
+const read = (path, type) => new Promise((resolve, reject) => {
+  fs.readFile(path, type, (err, file) => {
+    if (err) reject(err)
+    resolve(file)
+  })
+})
 const { createAlchemyWeb3 } = require("@alch/alchemy-web3");
-const web3 = createAlchemyWeb3(API_URL);
 
-const contract = require("../artifacts/contracts/Malthusia.sol/Malthusia.json");
-const contractAddress = "0xD2E0D69021c8489310F18A5Fbdfd3210aC79be66";
-const nftContract = new web3.eth.Contract(contract.abi, contractAddress);
+if (process.argv.length < 6) {
+  console.log(`Usage: node mint-nft.js eth_url contract_address robot_type name code_file\n\neth_url: web socket URL to a json-rpc node\ncontract_address: the address at which the Malthusia.sol contract is deployed`)
+  process.exit(9);
+}
+
+const eth_url = process.argv[2];
+const contract_address = process.argv[3];
+const name = process.argv[4];
+const code_file = process.argv[5];
+
 
 async function mintNFT(tokenURI) {
+  const PUBLIC_KEY = process.env.PUBLIC_KEY;
+  const PRIVATE_KEY = process.env.PRIVATE_KEY;
+  const web3 = createAlchemyWeb3(eth_url);
+  const contract_source = require("../artifacts/contracts/Malthusia.sol/Malthusia.json");
+  const contract = new web3.eth.Contract(contract_source.abi, contract_address);
+
   const nonce = await web3.eth.getTransactionCount(PUBLIC_KEY, "latest");
+
+  const code = await read(code_file, "utf8")
 
   const tx = {
     from: PUBLIC_KEY,
-    to: contractAddress,
+    to: contract_address,
     nonce: nonce,
     gas: 500000,
-    data: nftContract.methods.mintNFT(PUBLIC_KEY, tokenURI).encodeABI(),
+    value: 10**16,
+    data: contract.methods.createRobot(PUBLIC_KEY, tokenURI, name, code).encodeABI(),
   };
 
   const signPromise = web3.eth.accounts.signTransaction(tx, PRIVATE_KEY);
