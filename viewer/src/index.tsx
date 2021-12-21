@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
+import Submit from "./Submit";
 import { Router } from "@gatsbyjs/reach-router";
 import reportWebVitals from "./reportWebVitals";
 
@@ -9,6 +10,7 @@ ReactDOM.render(
   <React.StrictMode>
     <Router>
       <App path="/" />
+      <Submit path="/submit" />
     </Router>
   </React.StrictMode>,
   document.getElementById("root")

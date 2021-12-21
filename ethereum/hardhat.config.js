@@ -8,7 +8,9 @@ module.exports = {
   solidity: "0.8.9",
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {},
+    hardhat: {
+      chainId: 1337
+    },
     goerli: {
       url: GOERLI_HTTP,
       accounts: [`0x${PRIVATE_KEY}`],

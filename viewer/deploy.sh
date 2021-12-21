@@ -7,6 +7,8 @@ function checkout_web {
 GIT_HASH=$(git rev-parse --short HEAD)
 BRANCH=$(git branch --show-current)
 
+./update_contract.sh
+
 npm run build
 if ! checkout_web; then
     echo "error!"
