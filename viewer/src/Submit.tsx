@@ -29,7 +29,6 @@ async function mintNFT(name: string, code: string, account: string, w3: any) {
     from: account,
     to: contract_address,
     nonce: nonce,
-    gas: 500000,
     value: 10 ** 16,
     data: contract.methods.createRobot(account, tokenURI, name, code).encodeABI(),
   };
@@ -55,6 +54,7 @@ function Submit(props: RouteComponentProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [value, setValue] = useState(0.01);
 
   const parseFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -112,9 +112,16 @@ function Submit(props: RouteComponentProps) {
           <input type="file" onChange={(e) => parseFile(e)}></input>
         </div>
         <div>
+          <label>value (eth): </label>
+          <input className="border border-gray-500 rounded-sm" type='number' value={value} onChange={(e) => setValue(+e.target.value)}></input>
+        </div>
+        <div>
           <button className="font-bold bg-blue-700 text-white rounded-md px-4 py-1" onClick={submit}>submit to ethereum</button>
         </div>
-        <div className="text-red-700">
+        <div className="text-green-700" style={{ display: status === "" ? "none" : "inherit" }}>
+          <span>{status}</span>
+        </div>
+        <div className="text-red-700" style={{ display: error === "" ? "none" : "inherit" }}>
           <span>{error}</span>
         </div>
         <div className="bg-gray-100 overflow-x-scroll p-4">
