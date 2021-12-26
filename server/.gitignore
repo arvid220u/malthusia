@@ -1,3 +1,6 @@
 __pycache__
 .env
 data.json
+.python-version
+actions.jsonl
+replay.gz

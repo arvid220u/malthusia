@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 async function main() {
   const Malthusia = await ethers.getContractFactory("Malthusia");
 
-  console.log("Deploying Malthusia...")
+  console.log("Deploying Malthusia...");
   const malthusia = await Malthusia.deploy();
   console.log("Contract deployed to address:", malthusia.address);
 }

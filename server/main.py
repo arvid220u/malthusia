@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -7,6 +9,8 @@ import asyncio
 load_dotenv()
 
 app = FastAPI()
+
+REPLAY_FILE = os.environ.get("REPLAY_FILE")
 
 origins = ["http://localhost", "http://localhost:3000", "https://malthusia.art"]
 
@@ -25,7 +29,7 @@ async def followfile(fname: str):
         "tail", "-c", "+0", "-F", fname, stdout=asyncio.subprocess.PIPE
     )
     N = 100_000
-    wait_timeout = 5
+    wait_timeout = 60
     while True:
         try:
             bs = await asyncio.wait_for(proc.stdout.read(n=N), wait_timeout)
@@ -43,4 +47,4 @@ async def followfile(fname: str):
 async def replay():
     # we cannot simply set Content-Encoding: gzip, because our replay file format is several gzips concatenated together
     # while this is okay by the original gzip standard, it is not okay by most browsers...
-    return StreamingResponse(followfile("../engine/replay.gz"), media_type="application/replay")#, headers={"Content-Encoding": "gzip"})
+    return StreamingResponse(followfile(REPLAY_FILE), media_type="application/replay")#, headers={"Content-Encoding": "gzip"})

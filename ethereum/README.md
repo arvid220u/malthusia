@@ -38,6 +38,8 @@ PRIVATE_KEY="your-metamask-private-key"
 
 5. Run `node scripts/mint-nft.js` to mint an NFT.
 
+6. to mine empty block: run `npx hardhat --network localhost console` and then run `ethers.provider.send("evm_mine")`
+
 ## misc useful info
 
 1. https://docs.openzeppelin.com/learn/deploying-and-interacting?pref=hardhat is a good guide

@@ -6,3 +6,5 @@ dist/
 *.pyh.original
 *.egg-info/
 actions.jsonl
+.python-version
+examplefuncsplayer.txt
