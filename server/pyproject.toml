@@ -11,6 +11,8 @@ fastapi = "^0.70.0"
 uvicorn = {extras = ["standard"], version = "^0.15.0"}
 python-dotenv = "^0.19.1"
 malthusia = { path = "../engine/", develop = true }
+typer = "^0.4.0"
+web3 = "^5.25.0"
 
 [tool.poetry.dev-dependencies]
 

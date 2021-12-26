@@ -1,6 +1,10 @@
 __pycache__/
-build/
+dist/
 *.pyc
-*.bcpx
+*.pyh
+*.pyc.original
+*.pyh.original
 *.egg-info/
-threader/threader.cpython-36m-x86_64-linux-gnu.so
+actions.jsonl
+.python-version
+examplefuncsplayer.txt
