@@ -1,6 +1,6 @@
 export function blockToRound(block, init_block) {
   // this should be a piece-wise linear function, I believe. remember to not change the past, but feel free to change the future
-  return 2*(block - init_block);
+  return block - init_block;
 }
 
 // valueToRobotType maps a cost to a robot type

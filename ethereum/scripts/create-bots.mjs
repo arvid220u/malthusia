@@ -42,12 +42,12 @@ async function main() {
   contract.events
     .Creation(options)
     .on("data", (event) => {
-      console.log(`data: ${event}`);
-      console.log(event);
+      console.error(`data: ${event}`);
+      console.error(event);
       const values = event.returnValues;
       const robot_type = valueToRobotType(values.value);
       if (robot_type === -1) {
-        console.log(`invalid value: ${values.value}. no robot created!`);
+        console.error(`invalid value: ${values.value}. no robot created!`);
         return;
       }
       const action = {
@@ -59,14 +59,16 @@ async function main() {
         code: values.code,
       };
       fsp.appendFile(actions_file, JSON.stringify(action) + "\n");
+      console.error("done creating action!")
     })
     .on("changed", (changed) => {
-      console.log(`changed: ${changed}`);
+      console.error(`changed: ${changed}`);
     })
     .on("error", (err) => {
-      throw err;
+        console.error("error!");
+        console.error(err);
     })
-    .on("connected", (str) => console.log(`connected: ${str}`));
+    .on("connected", (str) => console.error(`connected: ${str}`));
 }
 
 main();

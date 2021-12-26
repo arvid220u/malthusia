@@ -38,9 +38,13 @@ async function main() {
       }
     })
     .on("error", (err) => {
-      throw err;
+      console.error("error!");
+      console.error(err);
     })
-    .on("connected", (_) => {});
+    .on("connected", (msg) => {
+      console.error("connected!");
+      console.error(msg);
+    });
 }
 
 main();
