@@ -8,8 +8,7 @@ license = "GNU General Public License v3.0"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 pytest = "^6.2.4"
-web3 = "^5.25.0"
-typer = "^0.3.2"
+typer = "^0.4.0"
 
 [tool.poetry.dev-dependencies]
 pandas = "^1.3.5"

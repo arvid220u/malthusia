@@ -69,7 +69,7 @@ def genactions(flattened_bots: List[str], action_file: str, robot_type: Optional
 
 @app.command()
 def run(bots: Optional[List[str]] = typer.Argument(None), action_file: Optional[str] = None, output_file: str = None,
-        map_file: str = None, raw_text: bool = False, seed: int = GameConstants.DEFAULT_SEED, debug: bool = True):
+        map_file: str = None, raw_text: bool = False, seed: int = GameConstants.DEFAULT_SEED, debug: bool = True, stdin_turn: bool = False):
     global game
     # The faulthandler makes certain errors (segfaults) have nicer stacktraces.
     faulthandler.enable()
@@ -117,6 +117,8 @@ def run(bots: Optional[List[str]] = typer.Argument(None), action_file: Optional[
     # If it is not, then we simply play the entire game.
     if not sys.flags.interactive:
         while True:
+            if stdin_turn:
+                input()
             game.turn()
     else:
         # print out help message!
