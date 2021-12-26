@@ -3,6 +3,7 @@
 """
 The malthusia command line tool!
 """
+import binascii
 
 import typer
 import os
@@ -13,6 +14,7 @@ import sys
 import marshal
 import dis
 from types import CodeType
+from typing import List, Optional
 import struct
 
 from malthusia import CodeContainer, Game, GameConstants
@@ -22,10 +24,65 @@ app = typer.Typer()
 
 
 @app.command()
-def run(action_file: str = "actions.jsonl", output_file: str = None, map_file: str = None, raw_text: bool = False, seed: int = GameConstants.DEFAULT_SEED, debug: bool = True):
+def prepare(bots: List[str], action_file: str, robot_type: Optional[List[int]] = None,
+            round: Optional[List[int]] = None, creator: str = "player", append: bool = False):
+    """
+    combine flatten and genactions
+    """
+    flattened_bots = []
+    for bot in bots:
+        flattened_bots.append(flatten(bot))
+    genactions(flattened_bots, action_file, robot_type, round, creator, append)
+
+
+
+@app.command()
+def genactions(flattened_bots: List[str], action_file: str, robot_type: Optional[List[int]] = None,
+               round: Optional[List[int]] = None, creator: str = "player", append: bool = False):
+    actions = []
+
+    if not robot_type:
+        robot_type = [0 for _ in flattened_bots]
+    elif len(robot_type) != len(flattened_bots):
+        raise typer.BadParameter("must specify robot types for all robots")
+    if not round:
+        round = [1 for _ in flattened_bots]
+    elif len(round) != len(flattened_bots):
+        raise typer.BadParameter("must specify round for all robots")
+
+    for i, bot in enumerate(flattened_bots):
+        with open(bot, "r") as f:
+            code = f.read()
+        action = {
+            "type": "new_robot",
+            "round": round[i],
+            "robot_type": robot_type[i],
+            "creator": creator,
+            "uid": binascii.b2a_hex(os.urandom(4)).decode('utf-8'),
+            "code": code,
+        }
+        actions.append(action)
+
+    with open(action_file, "w" if not append else "a") as f:
+        f.write("\n".join([json.dumps(action) for action in actions]))
+
+
+@app.command()
+def run(bots: Optional[List[str]] = typer.Argument(None), action_file: Optional[str] = None, output_file: str = None,
+        map_file: str = None, raw_text: bool = False, seed: int = GameConstants.DEFAULT_SEED, debug: bool = True):
     global game
     # The faulthandler makes certain errors (segfaults) have nicer stacktraces.
     faulthandler.enable()
+
+    if len(bots) > 0 and action_file is not None:
+        raise ValueError(
+            "Cannot read both from bots and an action file, because the bots will overwrite the action file.")
+    if len(bots) == 0 and action_file is None:
+        raise typer.BadParameter("Need to specify either bots or an action-file. Run --help for more info.")
+
+    if action_file is None:
+        action_file = "actions.jsonl"
+        prepare(bots=bots, action_file=action_file)
 
     # the round delimiter is a string that can never appear inside a valid JSON file.
     # each round will start and end with this string
@@ -100,7 +157,7 @@ def flatten(bot_folder: str, output_file: str = None):
     with open(output_file, "w") as f:
         f.write(dirfile)
 
-    print('Success! Upload {} through the online portal'.format(output_file))
+    return output_file
 
 
 # inspired by https://gist.github.com/stecman/3751ac494795164efa82a683130cabe5
@@ -167,8 +224,9 @@ def code_to_bytecode(code, mtime=0, source_size=0):
 
 
 @app.command()
-def instrument(filename: str, replace_builtins: bool = True, instrument: bool = True, instrument_binary_multiply: bool = True,
-         reraise_dangerous_exceptions: bool = True, write_dis: bool = True):
+def instrument(filename: str, replace_builtins: bool = True, instrument: bool = True,
+               instrument_binary_multiply: bool = True,
+               reraise_dangerous_exceptions: bool = True, write_dis: bool = True):
     with open(filename, "r") as f:
         source = f.read()
     compiled_source = compile(source, filename, "exec")

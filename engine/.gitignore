@@ -5,3 +5,4 @@ dist/
 *.pyc.original
 *.pyh.original
 *.egg-info/
+actions.jsonl

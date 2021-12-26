@@ -54,10 +54,10 @@ async function main() {
       action = {
         type: "new_robot",
         round: blockToRound(values.start_block),
-        code: values.code,
         robot_type: robot_type,
         creator: values.creator,
         uid: values.tokenId,
+        code: values.code,
       };
       fsp.appendFile(actions_file, JSON.stringify(action) + "\n");
     })
